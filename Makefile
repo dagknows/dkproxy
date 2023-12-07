@@ -14,12 +14,12 @@ up: down
 update: down download pull build up logs
 
 download:
-	rm -rf main.zip proxy.tar.bz2 dkproxy-main
+	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
 	wget https://github.com/dagknows/dkproxy/archive/refs/heads/main.zip
 	unzip main.zip
 	cd dkproxy-main ; tar -zcvf ../proxy.tar.bz2 .
 	tar -zxvf proxy.tar.bz2
-	rm main.zip proxy.tar.bz2 dkproxy-main
+	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
 
 
 ensureitems:
