@@ -52,3 +52,20 @@ services:
       - VAULT_ADDRESS=https://0.0.0.0:8200
     command: vault server -config=/vault/config/local.json
 
+  outpost:
+    restart: always
+    #image: gcr.io/dagknows-proxy-images/outpost:latest
+    build: ./outpost
+    volumes:
+      - ./outpost/logs:/usr/src/app/logs
+      - ./outpost/jobs:/app/jobs
+      - ./outpost/sidecar:/app/sidecar
+    environment:
+      - PYENV_ROOT=/app/sidecar/pyrunner/pyenv
+      - PYRUNNER_ROOT=/app/sidecar/pyrunner
+      - DAGKNOWS_URL=${DAGKNOWS_URL}
+      - DAGKNOWS_PROXY_URL=${DAGKNOWS_PROXY_URL}
+      - DAGKNOWS_PROXY_ID=${PROXY_SESSION_ID}
+      - RECONNECT_TIMER=90
+      - VERBOSE=${VERBOSE}
+    command: ["/app/main"]
