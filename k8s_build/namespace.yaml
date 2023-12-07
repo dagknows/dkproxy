@@ -1,0 +1,10 @@
+{
+  "apiVersion": "v1",
+  "kind": "Namespace",
+  "metadata": {
+    "name": "{{PROXY_NAMESPACE}}",
+    "labels": {
+      "name": "{{PROXY_NAMESPACE}}"
+    }
+  }
+}

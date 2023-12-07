@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  labels:
+    com.dagknows.service: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      com.dagknows.service: vault
+  template:
+    metadata:
+      labels:
+        com.dagknows.service: vault
+    spec:
+      containers:
+        - name: vault
+          image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/vault:latest ## - To be replaced by GCR image.
+          imagePullPolicy: "Always"
+          command: ["vault"]
+          args: ["server", "-config=/vault/config/local.json"]
+          ports:
+            - containerPort: 5200
+          env:
+            - name: VAULT_ADDR
+              value: "https://0.0.0.0:8200"
+            - name: VAULT_API_ADDR
+              value: "https://0.0.0.0:8200"
+            - name: VAULT_ADDRESS
+              value: "https://0.0.0.0:8200"
+          volumeMounts:
+            - mountPath: /vault/config/
+              name: config-vol
+            - mountPath: /vault/config/ssl
+              name: secrets-vol
+              readOnly: false
+      volumes:
+        - name: config-vol
+          configMap:
+            name: vault-configs
+        - name: secrets-vol
+          secret:
+            secretName: vault-keys
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  labels:
+    com.dagknows.service: vault
+spec:
+  clusterIP: None
+  ports:
+    - port: 5200
+      name: serving
+  selector:
+    com.dagknows.service: vault
