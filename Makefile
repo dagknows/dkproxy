@@ -11,7 +11,8 @@ build: down ensureitems
 up: down
 	sudo docker-compose up -d
 
-update: down download pull build up logs
+update: down download pull build
+	echo "Proxy updated.  Bring it up with make up logs"
 
 download:
 	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
