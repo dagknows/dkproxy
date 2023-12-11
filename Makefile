@@ -11,7 +11,7 @@ down:
 update: down download pull build
 	echo "Proxy updated.  Bring it up with make up logs"
 
-up: down
+up: down ensureitems
 	sudo docker-compose up -d
 
 download:
