@@ -13,7 +13,7 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 ### Install DagKnows CLI
 
 ```
-pip install dagknows
+pip install dagknows --force-reinstall
 ```
 
 The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.
