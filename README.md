@@ -2,13 +2,18 @@
 
 The DagKnows proxy runner.   This repo contains a minimal set of compose files for running a DagKnows proxy anywhere.
 
+## Requirements
+
+### Packages
+
+```
+apt-get update
+apt-get install -y docker.io docker-compose unzip python-pip3
+```
+
 ## Installation
 
-### Basic Requirements
-
-1. Ensure you have git and Docker installed
-
-2. Checkout this repo.
+1. Checkout this repo.
 
 ### Install DagKnows CLI
 
