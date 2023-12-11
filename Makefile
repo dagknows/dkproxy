@@ -4,7 +4,7 @@ logs:
 
 prepare:
 	sudo apt-get update
-	sudo apt-get install -y docker.io docker-compose unzip python-pip3
+	sudo apt-get install -y make docker.io docker-compose unzip python-pip3
 
 build: down ensureitems
 	sudo docker-compose build --no-cache
