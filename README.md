@@ -4,19 +4,23 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 
 ## Requirements
 
-### Packages
-
-```
-apt-get update
-apt-get install -y docker.io docker-compose unzip python-pip3
-```
-
 ## Installation
 
 ### Checkout this repo.
 
 ```
 git clone https://github.com/dagknows/dkproxy.git
+```
+
+### Prepare Instance
+
+Ubuntu:
+
+```
+cd dkapp
+apt-get update
+apt-get install -y make
+make prepare
 ```
 
 ### Install DagKnows CLI
