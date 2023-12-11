@@ -22,7 +22,6 @@ download:
 	tar -zxvf proxy.tar.bz2
 	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
 
-
 ensureitems:
 	-mkdir -p ./outpost/sidecar/pyrunner
 	-mkdir -p ./outpost/sidecar/statuses
