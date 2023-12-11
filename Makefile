@@ -37,7 +37,7 @@ ensureitems:
 	touch outpost/requirements.txt
 	touch cmd_exec/requirements.txt
 
-pull:
+pull: prepare
 	sudo docker pull gcr.io/dagknows-proxy-images/outpost:latest
 	sudo docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
 	sudo docker pull gcr.io/dagknows-proxy-images/script_exec:latest

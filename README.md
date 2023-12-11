@@ -13,7 +13,11 @@ apt-get install -y docker.io docker-compose unzip python-pip3
 
 ## Installation
 
-1. Checkout this repo.
+### Checkout this repo.
+
+```
+git clone https://github.com/dagknows/dkproxy.git
+```
 
 ### Install DagKnows CLI
 
