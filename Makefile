@@ -2,6 +2,10 @@
 logs:
 	sudo docker-compose logs -f
 
+prepare:
+	sudo apt-get update
+	sudo apt-get install -y docker.io docker-compose unzip python-pip3
+
 build: down ensureitems
 	sudo docker-compose build --no-cache
 
