@@ -2,17 +2,17 @@
 logs:
 	sudo docker-compose logs -f
 
-down:
-	sudo docker-compose down --remove-orphans 
-
 build: down ensureitems
 	sudo docker-compose build --no-cache
 
-up: down
-	sudo docker-compose up -d
+down:
+	sudo docker-compose down --remove-orphans 
 
 update: down download pull build
 	echo "Proxy updated.  Bring it up with make up logs"
+
+up: down
+	sudo docker-compose up -d
 
 download:
 	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
