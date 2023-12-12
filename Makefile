@@ -37,7 +37,7 @@ ensureitems:
 	touch outpost/requirements.txt
 	touch cmd_exec/requirements.txt
 
-pull: prepare
+pull:
 	docker pull gcr.io/dagknows-proxy-images/outpost:latest
 	docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
 	docker pull gcr.io/dagknows-proxy-images/script_exec:latest
