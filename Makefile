@@ -1,22 +1,22 @@
 
 logs:
-	sudo docker-compose logs -f
+	docker-compose logs -f
 
 prepare:
 	sudo apt-get update
 	sudo apt-get install -y make docker.io docker-compose unzip python-pip3
 
 build: down ensureitems
-	sudo docker-compose build --no-cache
+	docker-compose build --no-cache
 
 down:
-	sudo docker-compose down --remove-orphans 
+	docker-compose down --remove-orphans 
 
 update: down download pull build
 	echo "Proxy updated.  Bring it up with make up logs"
 
 up: down ensureitems
-	sudo docker-compose up -d
+	docker-compose up -d
 
 download:
 	rm -Rf main.zip proxy.tar.bz2 dkproxy-main
@@ -38,7 +38,7 @@ ensureitems:
 	touch cmd_exec/requirements.txt
 
 pull: prepare
-	sudo docker pull gcr.io/dagknows-proxy-images/outpost:latest
-	sudo docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
-	sudo docker pull gcr.io/dagknows-proxy-images/script_exec:latest
-	sudo docker pull gcr.io/dagknows-proxy-images/agent_frontend:latest
+	docker pull gcr.io/dagknows-proxy-images/outpost:latest
+	docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
+	docker pull gcr.io/dagknows-proxy-images/script_exec:latest
+	docker pull gcr.io/dagknows-proxy-images/agent_frontend:latest
