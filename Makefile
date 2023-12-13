@@ -30,9 +30,7 @@ ensureitems:
 	-mkdir -p ./outpost/sidecar/pyrunner
 	-mkdir -p ./outpost/sidecar/statuses
 	-sudo chmod -R a+rw ./outpost/sidecar
-	-sudo chmod a+rx ./outpost/sidecar
-	-sudo chmod a+rx ./outpost/sidecar/statuses
-	-sudo chmod a+rx ./outpost/sidecar/pyrunner
+	-sudo chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner
 	touch script_exec/requirements.txt
 	touch outpost/requirements.txt
 	touch cmd_exec/requirements.txt
