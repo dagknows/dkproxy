@@ -12,7 +12,7 @@ if [ x"$PROXY_ALIAS" = "x" ]; then
   exit 1
 fi
 
-PROXY_NAME={{PROXY_NAMESPACE}}
+PROXY_NAME=${PROXY_ALIAS}
 CONTAINER_ID=$(docker ps | grep cmd-exec | grep ${PROXY_NAME} | awk '{print $1}')
 CMD="docker exec -it ${CONTAINER_ID} dkvault --vault-url=https://vault:8200 --vault-unseal-tokens-file ./src/keys/vault_unseal.keys $*"
 eval $CMD
