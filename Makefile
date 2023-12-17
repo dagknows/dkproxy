@@ -24,7 +24,7 @@ build: down ensureitems
 down:
 	docker compose down --remove-orphans 
 
-update: down download pull build
+update: down pull build
 	echo "Proxy updated.  Bring it up with make up logs"
 
 up: down ensureitems
