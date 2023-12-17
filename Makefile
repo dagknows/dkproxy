@@ -34,10 +34,10 @@ download:
 	sudo rm -Rf main.zip proxy.tar.bz2 dkproxy-main
 	sudo wget https://github.com/dagknows/dkproxy/archive/refs/heads/main.zip
 	sudo unzip main.zip
-	sudo cd dkproxy-main ; tar -zcvf ../proxy.tar.bz2 .
+	sudo tar --strip-components=1 -zcvf proxy.tar.bz2 dkproxy-main
 	sudo tar -zxvf proxy.tar.bz2
 	sudo rm -Rf main.zip proxy.tar.bz2 dkproxy-main
-	sudo chown -R ${USER}:${USER} .
+	sudo chown -R ${USER} .
 
 ensureitems:
 	touch script_exec/requirements.txt
