@@ -5,7 +5,8 @@ if [ ! -f "./.env" ]; then
   exit 1
 fi
 
-PROXY_FOLDER=`basename pwd`
+CURRFOLDER=`pwd`
+PROXY_FOLDER=`basename $CURRFOLDER`
 echo "Proxy Folder: $PROXY_FOLDER"
 
 PROXY_ALIAS=`cat .env | grep PROXY_ALIAS | sed -e 's/PROXY_ALIAS=//g'`
