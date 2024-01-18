@@ -22,7 +22,7 @@ echo "Proxy Name: $PROXY_NAME"
 CONTAINER_ID=$(docker ps | grep cmd-exec | grep ${PROXY_NAME} | awk '{print $1}')
 if [ x"$CONTAINER_ID" = "x" ]; then
   echo "Container not found for ${PROXY_NAME}.  Checking parent folder $PROXY_FOLDER"
-  CONTAINER_ID=$PROXY_FOLDER
+  CONTAINER_ID=$(docker ps | grep cmd-exec | grep ${PROXY_FOLDER} | awk '{print $1}')
 fi
 
 echo "Connecting to container: ${CONTAINER_ID}"
