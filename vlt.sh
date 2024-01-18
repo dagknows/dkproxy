@@ -6,6 +6,7 @@ if [ ! -f "./.env" ]; then
 fi
 
 PROXY_ALIAS=`cat .env | grep PROXY_ALIAS | sed -e 's/PROXY_ALIAS=//g'`
+echo "Proxy Alias: $PROXY_ALIAS"
 
 if [ x"$PROXY_ALIAS" = "x" ]; then
   echo "Please make sure .env file exists and it has a PROXY_ALIAS"
@@ -13,6 +14,7 @@ if [ x"$PROXY_ALIAS" = "x" ]; then
 fi
 
 PROXY_NAME=${PROXY_ALIAS}
+echo "Proxy Name: $PROXY_NAME"
 CONTAINER_ID=$(docker ps | grep cmd-exec | grep ${PROXY_NAME} | awk '{print $1}')
 echo "Connecting to container: ${CONTAINER_ID}"
 CMD="docker exec -it ${CONTAINER_ID} dkvault --vault-url=https://vault:8200 --vault-unseal-tokens-file ./src/keys/vault_unseal.keys $*"
