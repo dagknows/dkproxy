@@ -8,7 +8,7 @@ prepare:
 	echo "Installing Docker Repos..."
 	sudo apt-get install ca-certificates curl gnupg
 	sudo install -m 0755 -d /etc/apt/keyrings
-  @if [ ! -f /etc/apt/keyrings/docker.gpg ]; then \
+	@if [ ! -f /etc/apt/keyrings/docker.gpg ]; then \
 		curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg ; \
 	fi
 	echo "Adding user to docker user group..."
