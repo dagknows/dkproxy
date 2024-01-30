@@ -42,16 +42,12 @@ download:
 	sudo chown -R ${USER} .
 
 ensureitems:
-	touch script_exec/requirements.txt
 	touch outpost/requirements.txt
 	touch cmd_exec/requirements.txt
 	-mkdir -p ./outpost/sidecar/pyrunner
 	-mkdir -p ./outpost/sidecar/statuses
 	-sudo chmod -R a+rw ./outpost/sidecar
 	-sudo chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner
-	-sudo chmod -R a+rwx script_exec/src
-	-sudo chmod -R a+rwx script_exec/logs
-	-sudo chmod -R a+rwx agent_frontend/logs
 	-sudo chmod -R a+rwx cmd_exec/logs
 	-sudo chmod -R a+rwx outpost/logs
 	-sudo chmod -R a+rwx outpost/jobs
@@ -60,5 +56,3 @@ ensureitems:
 pull:
 	docker pull gcr.io/dagknows-proxy-images/outpost:latest
 	docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
-	docker pull gcr.io/dagknows-proxy-images/script_exec:latest
-	docker pull gcr.io/dagknows-proxy-images/agent_frontend:latest

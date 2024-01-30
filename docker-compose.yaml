@@ -1,32 +1,5 @@
 version: '3'
 services:
-
-  agent_frontend:
-    restart: always
-    image: gcr.io/dagknows-proxy-images/agent_frontend:latest
-    volumes:
-      - ./agent_frontend/logs:/usr/src/app/logs
-    environment:
-      - DAGKNOWS_URL=${DAGKNOWS_URL}
-      - PROXY_SESSION_ID=${PROXY_SESSION_ID}
-      - RECONNECT_TIMER=90
-      - VERBOSE=${VERBOSE}
-    command: ["python", "src/agent_frontend_vault.py"]
-
-  script-exec:
-    restart: always
-    #image: gcr.io/dagknows-proxy-images/script_exec:latest
-    build: ./script_exec
-    volumes:
-      - ./script_exec/logs:/usr/src/app/logs
-    environment:
-      - VERBOSE=${VERBOSE}
-      - DAGKNOWS_URL=${DAGKNOWS_URL}
-      - PYTHONPATH=/usr/src/app/src/userlibs
-      - FLASK_ENV=debug
-      - PROXY_SESSION_ID=${PROXY_SESSION_ID}
-    command: ["python", "src/script_exec.py"]
-
   cmd-exec:
     restart: always
     #image: gcr.io/dagknows-proxy-images/cmd_exec:latest
