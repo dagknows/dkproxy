@@ -1,0 +1,30 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-logs-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      purpose: cmd-exec-logs
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-keys-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  selector:
+    matchLabels:
+      purpose: cmd-exec-keys

@@ -1,0 +1,48 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: outpost-logs-volume
+  labels:
+    purpose: outpost-logs
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/ubuntu/outpost/logs"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: outpost-sidecar-volume
+  labels:
+    purpose: outpost-sidecar
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/ubuntu/outpost/sidecar"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: outpost-jobs-volume
+  labels:
+    purpose: outpost-jobs
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/ubuntu/outpost/jobs"

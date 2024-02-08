@@ -1,0 +1,32 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: cmd-exec-logs-volume
+  labels:
+    purpose: cmd-exec-logs
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/ubuntu/cmd-exec-logs-volume"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: cmd-exec-keys-volume
+  labels:
+    purpose: cmd-exec-keys
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/ubuntu/cmd-exec-keys-volume"

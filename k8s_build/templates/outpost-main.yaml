@@ -1,30 +1,4 @@
 ---
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: outpost-volume0
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/home/ubuntu/outpost-volume"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: outpost-pvc
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 2Gi
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
