@@ -33,5 +33,3 @@ kubectl -n {{PROXY_NAMESPACE}} create secret generic vault-keys \
 
 kubectl apply -f vault.yaml -n {{PROXY_NAMESPACE}}
 kubectl apply -f cmd-exec.yaml -n {{PROXY_NAMESPACE}}
-kubectl apply -f script-exec.yaml -n {{PROXY_NAMESPACE}}
-kubectl apply -f agent-frontend.yaml -n {{PROXY_NAMESPACE}}
