@@ -30,6 +30,6 @@ kubectl -n {{PROXY_NAMESPACE}} create secret generic vault-keys \
     --from-file=vault.key=../vault/config/ssl/vault.key
 
 # 6. Deploy the proxy
-
-kubectl apply -f vault.yaml -n {{PROXY_NAMESPACE}}
-kubectl apply -f cmd-exec.yaml -n {{PROXY_NAMESPACE}}
+kubectl apply -f vault-main.yaml -n {{PROXY_NAMESPACE}}
+kubectl apply -f cmd-exec-main.yaml -n {{PROXY_NAMESPACE}}
+kubectl apply -f outpost-main.yaml -n {{PROXY_NAMESPACE}}

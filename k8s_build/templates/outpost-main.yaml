@@ -19,27 +19,50 @@ spec:
         - name: outpost
           image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/script_exec:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
-          command: ["python", "src/script_exec.py"]
+          command: ["./main"]
           env:
-            - name: DAGKNOWS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: com.dagknows.secret.frontend
-                  key: DAGKNOWS_URL
-            - name: PYTHONPATH
-              value: "/usr/src/app/src/userlibs"
             - name: PROXY_SESSION_ID
               valueFrom:
                 secretKeyRef:
                   name: com.dagknows.secret.frontend
                   key: PROXY_SESSION_ID
+            - name: PROXY_ALIAS
+              valueFrom:
+                secretKeyRef:
+                  name: com.dagknows.secret.frontend
+                  key: PROXY_ALIAS
+            - name: SUPER_USER_ORG
+              valueFrom:
+                secretKeyRef:
+                  name: com.dagknows.secret.frontend
+                  key: SUPER_USER_ORG
+            - name: DAGKNOWS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: com.dagknows.secret.frontend
+                  key: DAGKNOWS_URL
+            - name: DAGKNOWS_PROXY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: com.dagknows.secret.frontend
+                  key: DAGKNOWS_PROXY_URL
           volumeMounts:
             - mountPath: /usr/src/app/logs
               name: logs-vol
+            - mountPath: /app/jobs
+              name: jobs-vol
+            - mountPath: /app/sidecar
+              name: sidecar-vol
       volumes:
         - name: logs-vol
           persistentVolumeClaim:
-            claimName: outpost-pvc
+            claimName: outpost-logs-pvc
+        - name: jobs-vol
+          persistentVolumeClaim:
+            claimName: outpost-jobs-pvc
+        - name: sidecar-vol
+          persistentVolumeClaim:
+            claimName: outpost-sidecar-pvc
 ---
 apiVersion: v1
 kind: Service

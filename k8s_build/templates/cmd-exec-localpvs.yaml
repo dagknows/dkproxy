@@ -13,7 +13,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/home/ubuntu/cmd-exec-logs-volume"
+    path: "{{LOCAL_PV_ROOT}}/cmd-exec/logs"
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -29,4 +29,4 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/home/ubuntu/cmd-exec-keys-volume"
+    path: "{{LOCAL_PV_ROOT}}/cmd-exec/keys"
