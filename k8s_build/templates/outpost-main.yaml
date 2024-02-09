@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: outpost
-          image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/script_exec:latest ## - To be replaced by GCR image.
+          image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/outpost:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
           command: ["./main"]
           env:
