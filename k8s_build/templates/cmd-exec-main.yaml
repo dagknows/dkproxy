@@ -17,13 +17,13 @@ spec:
     spec:
       containers:
         - name: cmd-exec
-          image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/cmd_exec:latest ## - To be replaced by GCR image.
+          image: gcr.io/{{SUPER_USER_ORG}}-proxy-images/cmd_exec:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
           command: ["python", "src/cmd_exec.py"]
           volumeMounts:
             - mountPath: /usr/src/app/logs
               name: logs-vol
-            - mountPath: /usr/src/app/keys
+            - mountPath: /usr/src/app/src/keys
               name: keys-vol
 #            - name: secrets-vol
 #              mountPath: /usr/src/app/src/keys/public_key.pem
@@ -35,12 +35,6 @@ spec:
         - name: keys-vol
           persistentVolumeClaim:
             claimName: cmd-exec-keys-pvc
-#        - name: secrets-vol
-#          secret:
-#            secretName: frontend-keys
-#            items:
-#              - key: public_key.pem
-#                path: public_key.pem
 ---
 apiVersion: v1
 kind: Service

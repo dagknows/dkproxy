@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: vault
-          image: gcr.io/{{SUPER_USER_ORG}}-dagknows-images/vault:latest ## - To be replaced by GCR image.
+          image: gcr.io/{{SUPER_USER_ORG}}-proxy-images/vault:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
           command: ["vault"]
           args: ["server", "-config=/vault/config/local.json"]

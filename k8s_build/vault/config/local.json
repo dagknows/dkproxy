@@ -1,0 +1,19 @@
+{
+  "disable_mlock": true,
+	"ui" : true,
+	"listener": [{
+		"tcp": {
+			"address": "0.0.0.0:8200",
+			"tls_min_version" : "tls12",
+			"tls_cert_file" : "/vault/config/ssl/vault.crt",
+			"tls_key_file"  : "/vault/config/ssl/vault.key"
+		}
+	}],
+	"storage" :{
+		"file" : {
+			"path" : "/vault/data"
+		}
+	},
+	"max_lease_ttl": "1000000h",
+	"default_lease_ttl": "1000000h"
+}
