@@ -45,7 +45,7 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - port: 5434
+    - port: 7777
       name: serving
   selector:
     com.dagknows.service: cmd-exec

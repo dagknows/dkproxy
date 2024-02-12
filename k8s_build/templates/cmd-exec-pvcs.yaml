@@ -4,7 +4,7 @@ apiVersion: v1
 metadata:
   name: cmd-exec-logs-pvc
 spec:
-  storageClassName: manual
+  storageClassName: cmd-exec-storageclass
   accessModes:
     - ReadWriteMany
   resources:
@@ -13,13 +13,14 @@ spec:
   selector:
     matchLabels:
       purpose: cmd-exec-logs
+      namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: cmd-exec-keys-pvc
 spec:
-  storageClassName: manual
+  storageClassName: cmd-exec-storageclass
   accessModes:
     - ReadWriteMany
   resources:
@@ -28,3 +29,4 @@ spec:
   selector:
     matchLabels:
       purpose: cmd-exec-keys
+      namespace: {{PROXY_NAMESPACE}}

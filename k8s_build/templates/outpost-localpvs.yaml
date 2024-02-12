@@ -2,47 +2,50 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: outpost-logs-volume
+  name: {{PROXY_NAMESPACE}}-outpost-logs-volume
   labels:
     purpose: outpost-logs
+    namespace: {{PROXY_NAMESPACE}}
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   persistentVolumeReclaimPolicy: Retain
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "{{LOCAL_PV_ROOT}}/outpost/logs"
+    path: {{MINIKUBE_MOUNT_ROOT}}/outpost/logs
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: outpost-sidecar-volume
+  name: {{PROXY_NAMESPACE}}-outpost-sidecar-volume
   labels:
     purpose: outpost-sidecar
+    namespace: {{PROXY_NAMESPACE}}
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   persistentVolumeReclaimPolicy: Retain
   capacity:
     storage: 30Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "{{LOCAL_PV_ROOT}}/outpost/sidecar"
+    path: {{MINIKUBE_MOUNT_ROOT}}/outpost/sidecar
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: outpost-jobs-volume
+  name: {{PROXY_NAMESPACE}}-outpost-jobs-volume
   labels:
     purpose: outpost-jobs
+    namespace: {{PROXY_NAMESPACE}}
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   persistentVolumeReclaimPolicy: Retain
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "{{LOCAL_PV_ROOT}}/outpost/jobs"
+    path: {{MINIKUBE_MOUNT_ROOT}}/outpost/jobs

@@ -2,31 +2,33 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: cmd-exec-logs-volume
+  name: {{PROXY_NAMESPACE}}-cmd-exec-logs-volume
   labels:
     purpose: cmd-exec-logs
+    namespace: {{PROXY_NAMESPACE}}
 spec:
-  storageClassName: manual
+  storageClassName: cmd-exec-storageclass
   persistentVolumeReclaimPolicy: Retain
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "{{LOCAL_PV_ROOT}}/cmd-exec/logs"
+    path: "{{MINIKUBE_MOUNT_ROOT}}/cmd-exec/logs"
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: cmd-exec-keys-volume
+  name: {{PROXY_NAMESPACE}}-cmd-exec-keys-volume
   labels:
     purpose: cmd-exec-keys
+    namespace: {{PROXY_NAMESPACE}}
 spec:
-  storageClassName: manual
+  storageClassName: cmd-exec-storageclass
   persistentVolumeReclaimPolicy: Retain
   capacity:
     storage: 10Mi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "{{LOCAL_PV_ROOT}}/cmd-exec/keys"
+    path: "{{MINIKUBE_MOUNT_ROOT}}/cmd-exec/keys"

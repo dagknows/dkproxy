@@ -63,19 +63,19 @@ spec:
                   key: PROXY_SESSION_ID
           volumeMounts:
             - mountPath: /app/logs
-              name: logs-vol
+              name: outpost-logs-vol
             - mountPath: /app/jobs
-              name: jobs-vol
+              name: outpost-jobs-vol
             - mountPath: /app/sidecar
-              name: sidecar-vol
+              name: outpost-sidecar-vol
       volumes:
-        - name: logs-vol
+        - name: outpost-logs-vol
           persistentVolumeClaim:
             claimName: outpost-logs-pvc
-        - name: jobs-vol
+        - name: outpost-jobs-vol
           persistentVolumeClaim:
             claimName: outpost-jobs-pvc
-        - name: sidecar-vol
+        - name: outpost-sidecar-vol
           persistentVolumeClaim:
             claimName: outpost-sidecar-pvc
 ---
@@ -88,7 +88,7 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - port: 5434
+    - port: 9999
       name: serving
   selector:
     com.dagknows.service: outpost

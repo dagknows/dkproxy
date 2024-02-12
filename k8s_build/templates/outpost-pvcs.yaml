@@ -4,7 +4,7 @@ apiVersion: v1
 metadata:
   name: outpost-logs-pvc
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   accessModes:
     - ReadWriteMany
   resources:
@@ -13,13 +13,14 @@ spec:
   selector:
     matchLabels:
       purpose: outpost-logs
+      namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: outpost-sidecar-pvc
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   accessModes:
     - ReadWriteMany
   resources:
@@ -28,13 +29,14 @@ spec:
   selector:
     matchLabels:
       purpose: outpost-sidecar
+      namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: outpost-jobs-pvc
 spec:
-  storageClassName: manual
+  storageClassName: outpost-storageclass
   accessModes:
     - ReadWriteMany
   resources:
@@ -43,3 +45,4 @@ spec:
   selector:
     matchLabels:
       purpose: outpost-jobs
+      namespace: {{PROXY_NAMESPACE}}

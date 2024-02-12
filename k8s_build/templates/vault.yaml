@@ -22,7 +22,7 @@ spec:
           command: ["vault"]
           args: ["server", "-config=/vault/config/local.json"]
           ports:
-            - containerPort: 5200
+            - containerPort: 8200
           env:
             - name: VAULT_ADDR
               value: "https://0.0.0.0:8200"
@@ -54,7 +54,7 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - port: 5200
+    - port: 8200
       name: serving
   selector:
     com.dagknows.service: vault
