@@ -75,6 +75,27 @@ This step only needs to be run once (per proxy install).
 sh mkmount.sh
 ```
 
+You should see something like this:
+
+
+```
+ % sh mkmounts.sh
+📁  Mounting host path /Users/dkproxy/k8s_build/sridaily/localpv into VM as /minikubemount ...
+    ▪ Mount type:   9p
+    ▪ User ID:      docker
+    ▪ Group ID:     docker
+    ▪ Version:      9p2000.L
+    ▪ Message Size: 262144
+    ▪ Options:      map[]
+    ▪ Bind Address: 127.0.0.1:52825
+🚀  Userspace file server: ufs starting
+✅  Successfully mounted /Users/dkproxy/k8s_build/sridaily/localpv to /minikubemount
+
+📌  NOTE: This process must stay alive for the mount to be accessible ...
+```
+
+Do not kill this process - open in a new window if necessary (or run as a daemon mode if you are running on a seperate VM).
+
 ### K8S Specific Setup
 
 TBD
