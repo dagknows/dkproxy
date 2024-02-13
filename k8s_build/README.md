@@ -68,8 +68,17 @@ cd `./proxies/<YOUR_PROXY_NAME>`
 
 ### Minikube Specific Setup - Mount local folders on minikube
 
-If you are running this on minikube then ensure minikube has mounted a few local folders so they are visible to your pods on the MK cluster.
-This step only needs to be run once (per proxy install).
+#### Create Local PVs
+
+First create local folders and the PVs pointing to these local folders so that minikube can be mounted on them (and made available to our pods):
+
+```
+sh localpvs.sh
+```
+
+#### Mount Local PVs on MiniKube
+
+Now ensure minikube has mounted a the above created local folders so they are visible to your pods on the MK cluster.  This step only needs to be run once (per proxy install).
 
 ```
 sh mkmount.sh
@@ -97,6 +106,8 @@ You should see something like this:
 Do not kill this process - open in a new window if necessary (or run as a daemon mode if you are running on a seperate VM).
 
 ### K8S Specific Setup
+
+#### Ensure you have an EFS to mount to
 
 TBD
 
