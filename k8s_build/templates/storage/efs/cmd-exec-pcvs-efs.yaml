@@ -1,0 +1,32 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-logs-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass-cmd-exec-logs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      purpose: cmd-exec-logs
+      namespace: {{PROXY_NAMESPACE}}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-keys-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass-cmd-exec-keys
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  selector:
+    matchLabels:
+      purpose: cmd-exec-keys
+      namespace: {{PROXY_NAMESPACE}}

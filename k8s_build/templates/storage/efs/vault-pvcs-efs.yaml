@@ -1,0 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vault-data-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass-vault-data
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      purpose: vault-data
+      namespace: {{PROXY_NAMESPACE}}

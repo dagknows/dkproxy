@@ -36,6 +36,8 @@ spec:
             - mountPath: /vault/config/ssl
               name: secrets-vol
               readOnly: false
+            - mountPath: /vault/data
+              name: vault-data-vol
       volumes:
         - name: config-vol
           configMap:
@@ -43,6 +45,9 @@ spec:
         - name: secrets-vol
           secret:
             secretName: vault-keys
+        - name: vault-data-vol
+          persistentVolumeClaim:
+            claimName: vault-data-pvc
 
 ---
 apiVersion: v1

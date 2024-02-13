@@ -1,0 +1,17 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-vault-data-volume
+  labels:
+    purpose: vault-data
+    namespace: {{PROXY_NAMESPACE}}
+spec:
+  storageClassName: vault-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: {{MINIKUBE_MOUNT_ROOT}}/vault/data

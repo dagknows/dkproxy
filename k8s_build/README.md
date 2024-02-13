@@ -73,7 +73,7 @@ cd `./proxies/<YOUR_PROXY_NAME>`
 First create local folders and the PVs pointing to these local folders so that minikube can be mounted on them (and made available to our pods):
 
 ```
-sh localpvs.sh
+sh pv-local.sh
 ```
 
 #### Mount Local PVs on MiniKube
