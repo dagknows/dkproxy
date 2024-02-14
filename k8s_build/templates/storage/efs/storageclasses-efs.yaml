@@ -1,61 +1,73 @@
 # Storage class for when we want provide a single "EFS" to all our containers via
 # access points
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-outpost-logs
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-outpost-jobs
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-outpost-sidecar
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-cmd-exec-logs
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-cmd-exec-keys
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
-----
+---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{PROXY_NAMESPACE}}-efs-storageclass-vault-data
 provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
 parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}

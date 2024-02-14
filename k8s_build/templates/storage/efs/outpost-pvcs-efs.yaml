@@ -10,10 +10,6 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  selector:
-    matchLabels:
-      purpose: outpost-logs
-      namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -26,10 +22,6 @@ spec:
   resources:
     requests:
       storage: 30Gi
-  selector:
-    matchLabels:
-      purpose: outpost-sidecar
-      namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -42,7 +34,3 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  selector:
-    matchLabels:
-      purpose: outpost-jobs
-      namespace: {{PROXY_NAMESPACE}}

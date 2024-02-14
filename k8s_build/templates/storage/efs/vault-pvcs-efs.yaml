@@ -10,7 +10,3 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  selector:
-    matchLabels:
-      purpose: vault-data
-      namespace: {{PROXY_NAMESPACE}}
