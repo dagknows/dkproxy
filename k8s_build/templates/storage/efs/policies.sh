@@ -34,4 +34,6 @@ aws iam update-assume-role-policy --role-name $role_name --policy-document "$TRU
 
 helm upgrade --install aws-efs-csi-driver --namespace kube-system aws-efs-csi-driver/aws-efs-csi-driver \
              --set controller.serviceAccount.create=false \
-             --set controller.serviceAccount.name=efs-csi-controller-sa
+             --set controller.serviceAccount.name=efs-csi-controller-sa \
+             --set image.repository=602401143452.dkr.ecr.{{AWS_REGION}}.amazonaws.com/eks/aws-efs-csi-driver
+

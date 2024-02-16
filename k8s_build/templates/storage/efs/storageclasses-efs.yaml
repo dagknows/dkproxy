@@ -12,6 +12,8 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /outpost/logs
+  reuseAccessPoint: "true"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -24,6 +26,8 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /outpost/jobs
+  reuseAccessPoint: "true"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -36,6 +40,8 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /outpost/sidecar
+  reuseAccessPoint: "true"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -48,6 +54,8 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /cmd-exec/logs
+  reuseAccessPoint: "true"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -60,6 +68,8 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /cmd-exec/keys
+  reuseAccessPoint: "true"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -72,3 +82,5 @@ parameters:
   provisioningMode: efs-ap
   fileSystemId: {{EFS_FILESYSTEM_ID}}
   directoryPerms: "777"
+  basePath: /vault/data
+  reuseAccessPoint: "true"

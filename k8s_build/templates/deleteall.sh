@@ -15,3 +15,4 @@ kubectl delete sc {{PROXY_NAMESPACE}}-efs-storageclass-vault-data
 
 kubectl delete pvc --all -n {{PROXY_NAMESPACE}}
 kubectl delete all --all -n {{PROXY_NAMESPACE}}
+helm uninstall aws-efs-csi-driver -n kube-system
