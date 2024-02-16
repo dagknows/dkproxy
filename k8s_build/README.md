@@ -72,26 +72,33 @@ Go into the newly created proxy folder
 cd `./proxies/<YOUR_PROXY_NAME>`
 ```
 
+## Create your namespace
+
+Regardless of whether you are on minikube or EKS you have to create a namespace for the proxy on your cluster.   This step also only need to be run once per proxy.
+
+```
+sh namespace.sh
+```
+
+## Setup any access-control and policies
+
+Usually a bunch of roles may need to be created.  And this can also be cluster specific.  Dont worry this is all abstracted in the generated policies.sh file which is created when you run `dk proxy initk8s` above:
+
+```
+sh policies.sh
+```
+
+## Setup your storage
+
 ### Minikube Specific Setup - Mount local folders on minikube
 
-#### Create Local PVs
-
-First create local folders and the PVs pointing to these local folders so that minikube can be mounted on them (and made available to our pods):
-
-```
-sh pv-local.sh
-```
-
-#### Mount Local PVs on MiniKube
-
-Now ensure minikube has mounted a the above created local folders so they are visible to your pods on the MK cluster.  This step only needs to be run once (per proxy install).
+Now ensure minikube has mounted the above created local folders so they are visible to your pods on the MK cluster.  This step only needs to be run once (per proxy install).
 
 ```
 sh mkmount.sh
 ```
 
 You should see something like this:
-
 
 ```
  % sh mkmounts.sh
@@ -111,13 +118,19 @@ You should see something like this:
 
 Do not kill this process - open in a new window if necessary (or run as a daemon mode if you are running on a seperate VM).
 
-### K8S Specific Setup
+### Start your Storage
 
-#### Ensure you have an EFS to mount to
+You can setup your storage (storage classes, PVCs, PVs etc) with:
 
-TBD
+```
+sh storage.sh
+```
 
-### Start your cluster!
+Note that this file is also generated as part of the `dk proxy initk8s` command.   There you can choose whether you want to do local or eks etc.
+
+## Start your cluster!
+
+Once your namespace, policies and storage is setup you can start your cluster:
 
 ```
 sh.apply.sh
