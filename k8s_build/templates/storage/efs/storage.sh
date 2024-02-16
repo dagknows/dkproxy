@@ -1,5 +1,6 @@
 # Create local PVs if we are in local PV mode - otherwise if we are in say efs do somethign else!
-
+#
+#
 # Create all storage classes
 kubectl apply -f storageclasses-efs.yaml
 
