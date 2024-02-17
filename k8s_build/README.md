@@ -57,7 +57,7 @@ The above will download an `.env` file to [the](the) current folder
 3. Now Initialize the k8s proxy with:
 
 ```
-`dk proxy initk8s <PATH_TO_DOT_ENV_FILE>`
+dk proxy initk8s <PATH_TO_DOT_ENV_FILE>
 ```
 
 The PATH_TO_DOT_ENV_FILE is where the `.env` file was downloaded in the step 2 (getenv)
@@ -69,7 +69,7 @@ This will setup your proxy in `./proxies/<YOUR_PROXY_NAME>` folder
 Go into the newly created proxy folder 
 
 ```
-cd `./proxies/<YOUR_PROXY_NAME>`
+cd ./proxies/<YOUR_PROXY_NAME>
 ```
 
 ## Create your namespace
@@ -133,7 +133,7 @@ Note that this file is also generated as part of the `dk proxy initk8s` command.
 Once your namespace, policies and storage is setup you can start your cluster:
 
 ```
-sh.apply.sh
+sh apply.sh
 ```
 
 ## Destroying your proxy
