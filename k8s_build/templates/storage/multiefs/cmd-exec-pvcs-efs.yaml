@@ -1,0 +1,70 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-cmdexec-logs-volume
+  labels:
+    purpose: cmdexec-logs
+    namespace: {{PROXY_NAMESPACE}}
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{CMDEXEC_LOGS_EFS_FILESYSTEM_ID}}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-cmdexec-keys-volume
+  labels:
+    purpose: cmdexec-keys
+    namespace: {{PROXY_NAMESPACE}}
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{CMDEXEC_KEYS_EFS_FILESYSTEM_ID}}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-logs-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      purpose: cmdexec-logs
+      namespace: {{PROXY_NAMESPACE}}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cmd-exec-keys-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  selector:
+    matchLabels:
+      purpose: cmdexec-keys
+      namespace: {{PROXY_NAMESPACE}}

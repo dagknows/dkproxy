@@ -1,0 +1,35 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-vault-data-volume
+  labels:
+    purpose: vault-data
+    namespace: {{PROXY_NAMESPACE}}
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{VAULT_DATA_EFS_FILESYSTEM_ID}}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vault-data-pvc
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      purpose: vault-data
+      namespace: {{PROXY_NAMESPACE}}

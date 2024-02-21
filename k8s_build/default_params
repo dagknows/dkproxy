@@ -1,0 +1,26 @@
+
+AWS_REGION=us-east-2
+PROXY_NAMESPACE=
+
+# Runner options
+SIDECAR_ROOT=/app/sidecar
+PYRUNNER_ROOT=/app/sidecar/pyrunner/pyenv
+PYENV_ROOT=/app/sidecar/pyrunner/pyenv
+
+# Local storage options - Ensure this is a full path
+LOCAL_PV_ROOT=./sidecar/localpv
+MINIKUBE_MOUNT_ROOT=/minkkubemount
+
+# EFS Options - 1 EFS per volume
+VAULT_DATA_EFS_FILESYSTEM_ID=fs-xxxxxxxxyyyyyzzzz
+CMDEXEC_LOGS_EFS_FILESYSTEM_ID=fs-00000111112222333
+CMDEXEC_KEYS_EFS_FILESYSTEM_ID=fs-11110000044443332
+OUTPOST_LOGS_EFS_FILESYSTEM_ID=fs-23423oup234oup293
+OUTPOST_JOBS_EFS_FILESYSTEM_ID=fs-helloworldhowareu
+OUTPOST_SIDECAR_EFS_FILESYSTEM_ID=fs-helloooooooooo
+
+# EFS Options - Dynamic provisioning via Access Points - TBD
+EFS_FILESYSTEM_ID=
+
+# EKS OPtions - only if using EKS to deploy
+EKS_CLUSTER_NAME=eks-dev-396

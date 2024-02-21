@@ -1,0 +1,14 @@
+# Storage class for when we want provide a single "EFS" to all our containers via
+# access points
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-efs-storageclass
+provisioner: efs.csi.aws.com
+reclaimPolicy: Retain # default value is Delete
+allowVolumeExpansion: true
+parameters:
+  provisioningMode: efs-ap
+  directoryPerms: "777"
+  reuseAccessPoint: "true"
