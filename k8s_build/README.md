@@ -32,7 +32,8 @@ minikube start
 
 ## K8S Setup
 
-TBD
+* Make sure your cluster is running.   You will need to set this in the EKS_CLUSTER_NAME in either .env or the .params file (down below).
+* Setup an EFS mount as well as 6 Access Points for storing the output/artifacts for cmdexec, outpost and vault.
 
 ## Initialize a Proxy
 
@@ -43,13 +44,13 @@ Assuming you have setup your DK cli from [here](https://github.com/dagknows/dkpr
 1. Create a new proxy (optional - you can an existing one too)
 
 ```
-dk proxy new <YOUR_PROXY_NAME>
+dk proxy new <YOUR_PROXY_ALIAS>
 ```
 
 2. Get the configs for the proxy you want to run:
 
 ```
-dk proxy getenv <YOUR_PROXY_NAME>
+dk proxy getenv <YOUR_PROXY_ALIAS>
 ```
 
 The above will download an `.env` file to [the](the) current folder
@@ -57,19 +58,20 @@ The above will download an `.env` file to [the](the) current folder
 3. Now Initialize the k8s proxy with:
 
 ```
-dk proxy initk8s <PATH_TO_DOT_ENV_FILE>
+dk proxy initk8s <PATH_TO_DOT_ENV_FILE> <PATH_TO_DOT_PARAMS_FILE> <PROXY_FOLDER> --storage-type=[local|multiefs]
 ```
 
 The PATH_TO_DOT_ENV_FILE is where the `.env` file was downloaded in the step 2 (getenv)
+You can have an additional .params file that stores more details about your cluster setup (this is usually stuff that wont be in the .env file).  See the `default_params` files for an example.
 
-This will setup your proxy in `./proxies/<YOUR_PROXY_NAME>` folder
+If you do not specify the `<PROXY_FOLDER>` the proxy will be installed in `./proxies/<YOUR_PROXY_ALIAS>` folder.
 
 ## Start your proxy
 
 Go into the newly created proxy folder 
 
 ```
-cd ./proxies/<YOUR_PROXY_NAME>
+cd ./proxies/<YOUR_PROXY_ALIAS>
 ```
 
 ## Create your namespace
