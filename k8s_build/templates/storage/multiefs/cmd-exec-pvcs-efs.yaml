@@ -6,6 +6,8 @@ metadata:
   labels:
     purpose: cmdexec-logs
     namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   persistentVolumeReclaimPolicy: Retain
@@ -25,6 +27,8 @@ metadata:
   labels:
     purpose: cmdexec-keys
     namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   persistentVolumeReclaimPolicy: Retain
@@ -41,6 +45,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: cmd-exec-logs-pvc
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   accessModes:
@@ -57,6 +63,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: cmd-exec-keys-pvc
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   accessModes:

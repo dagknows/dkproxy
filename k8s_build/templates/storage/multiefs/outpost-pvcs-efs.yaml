@@ -6,6 +6,8 @@ metadata:
   labels:
     purpose: outpost-logs
     namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   persistentVolumeReclaimPolicy: Retain
@@ -25,6 +27,8 @@ metadata:
   labels:
     purpose: outpost-jobs
     namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   persistentVolumeReclaimPolicy: Retain
@@ -44,6 +48,8 @@ metadata:
   labels:
     purpose: outpost-sidecar
     namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   persistentVolumeReclaimPolicy: Retain
@@ -60,6 +66,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: outpost-logs-pvc
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   accessModes:
@@ -76,6 +84,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: outpost-sidecar-pvc
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   accessModes:
@@ -85,13 +95,15 @@ spec:
       storage: 30Gi
   selector:
     matchLabels:
-      purpose: outpost-logs
+      purpose: outpost-sidecar
       namespace: {{PROXY_NAMESPACE}}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: outpost-jobs-pvc
+  finalizers:
+  - kubernetes
 spec:
   storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
   accessModes:
@@ -101,5 +113,5 @@ spec:
       storage: 10Gi
   selector:
     matchLabels:
-      purpose: outpost-keys
+      purpose: outpost-jobs
       namespace: {{PROXY_NAMESPACE}}
