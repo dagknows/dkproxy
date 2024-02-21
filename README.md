@@ -17,7 +17,7 @@ git clone https://github.com/dagknows/dkproxy.git
 Ubuntu:
 
 ```
-cd dkapp
+cd dkproxy
 apt-get update
 apt-get install -y make
 make prepare
