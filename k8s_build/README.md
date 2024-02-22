@@ -1,5 +1,8 @@
+# DK Proxy setup instructions
 
 ## Install Helm
+
+Download helm:
 
 ```
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -7,16 +10,14 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 ## Install Dagknows CLI
 
+
+The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.  Configure the DagKnows cli by providing an access token.
+
 ```
 pip install dagknows --force-reinstall
 ```
 
-The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.
-
-Configure the DagKnows cli by providing an access token:
-
 ## Minikube Setup (if testing on MK)
-
 
 ### Download and Install
 
