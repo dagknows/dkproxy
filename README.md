@@ -28,13 +28,11 @@ cd dkproxy && sh install.sh
 
 ### Configure DagKnows CLI
 
-The above installation script also installs the dagknows cli.  The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.  Configure the DagKnows cli by providing an access token:
+The above installation script also installs the dagknows cli.  The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.  Configure the DagKnows cli by providing an access token.  This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).  You can obtain an access token from the the App's settings page.
 
 ```
 dk config init
 ```
-
-This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).  You can obtain an access token from the the App's settings page.
 
 
 ## Install your Proxy
