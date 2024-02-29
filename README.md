@@ -41,11 +41,9 @@ You can directly install a proxy with:
 
 ```
 sh install_proxy.sh {{PROXY_NAME}}
-```
 
 eg:
 
-```
 sh install_proxy.sh myproxy
 ```
 
