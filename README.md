@@ -10,7 +10,7 @@ You will need the following:
 * git
 * python (3.10+)
 
-## Installation
+## Setup your Environment
 
 ### Checkout this repo.
 
@@ -18,7 +18,7 @@ You will need the following:
 git clone https://github.com/dagknows/dkproxy.git
 ```
 
-### Prepare Instance
+### Install required packages
 
 Run the following installer.  It will setup all the dependencies needed to run your proxy.
 
@@ -35,7 +35,7 @@ dk config init
 ```
 
 
-## Install your Proxy
+### Install your Proxy
 
 You can directly install a proxy with:
 
@@ -60,5 +60,5 @@ make up logs
 To update your proxy, simply do:
 
 ```
-make down pull up logs
+make update up logs
 ```
