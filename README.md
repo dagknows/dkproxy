@@ -6,6 +6,7 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 
 You will need the following:
 
+* Ubuntu VM Running Docker
 * git
 * python (3.10+)
 
@@ -18,8 +19,6 @@ git clone https://github.com/dagknows/dkproxy.git
 ```
 
 ### Prepare Instance
-
-Ubuntu:
 
 Run the following installer.  It will setup all the dependencies needed to run your proxy.
 
@@ -37,35 +36,31 @@ dk config init
 
 This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).  You can obtain an access token from the the App's settings page.
 
-### Create or Use a proxy
 
-Once configured you can see what proxies you already have access to with:
+## Install your Proxy
 
-```
-dk proxy list
-```
-
-You can either use an existing proxy or create a new one with:
+You can directly install a proxy with:
 
 ```
-dk proxy new <LABEL>
+sh install_proxy.sh {{PROXY_NAME}}
 ```
 
-#### Or Install proxy's envfile.
-
-If you want to use an existing proxy, you can run the following command to get a particular existing proxy's env vars which will be saved into an .env file.    This will install a basic .env file your proxy can use to connect to the SaaS instance.
+eg:
 
 ```
-dk proxy getenv <LABEL>
+sh install_proxy.sh myproxy
 ```
 
-### (Optional) Update your proxy
-
-This will let you pull the latest images
-
-### Run your proxy
+## Run your proxy
 
 ```
 make up logs
 ```
 
+## (Optional) Update your proxy
+
+To update your proxy, simply do:
+
+```
+make down pull up logs
+```
