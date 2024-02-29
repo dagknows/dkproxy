@@ -21,29 +21,21 @@ git clone https://github.com/dagknows/dkproxy.git
 
 Ubuntu:
 
-```
-cd dkproxy
-apt-get update
-apt-get install -y make
-make prepare
-```
-
-### Install DagKnows CLI
+Run the following installer.  It will setup all the dependencies needed to run your proxy.
 
 ```
-pip install dagknows --force-reinstall
+cd dkproxy && sh install.sh
 ```
 
-The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.
+### Configure DagKnows CLI
 
-Configure the DagKnows cli by providing an access token:
+The above installation script also installs the dagknows cli.  The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.  Configure the DagKnows cli by providing an access token:
 
 ```
 dk config init
 ```
 
-This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).
-You can obtain an access token from the the App's settings page.
+This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).  You can obtain an access token from the the App's settings page.
 
 ### Create or Use a proxy
 

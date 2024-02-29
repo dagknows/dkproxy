@@ -17,24 +17,30 @@ The CLI has some easy wrappers to interact with DagKnows as well as setting up/u
 pip install dagknows --force-reinstall
 ```
 
-## Minikube Setup (if testing on MK)
+## Setup/Configure your Kubernetes Cluster
 
-### Download and Install
+### Minikube Setup (if testing on MK)
+
+#### Download and Install
 
 Follow this - https://minikube.sigs.k8s.io/docs/start/
 
 Shows you how to install on various platfomrs
 
-### Start Minikube
+#### Start Minikube
 
 ```
 minikube start
 ```
 
-## K8S Setup
+### K8S Setup
 
-* Make sure your cluster is running.   You will need to set this in the EKS_CLUSTER_NAME in either .env or the .params file (down below).
-* Setup an EFS mount as well as 6 Access Points for storing the output/artifacts for cmdexec, outpost and vault.
+
+* Make sure your cluster is running.
+* You will need to set this in the EKS_CLUSTER_NAME in either .env or the .params file (down below).
+* Setup an EFS mount as well as 6 Access Points for storing the jobs/keys/logs/output/artifacts for cmdexec, outpost and vault.
+
+The above will ensure that our proxy can be deployed on this cluster and use the mounts correctly (when we are in the deploy step).
 
 ## Initialize a Proxy
 
@@ -42,30 +48,29 @@ Ensure you are in the k8s_build folder (this folder).
 
 Assuming you have setup your DK cli from [here](https://github.com/dagknows/dkproxy/blob/main/README.md), do the following:
 
-1. Create a new proxy (optional - you can an existing one too)
+### Create a new proxy (optional - you can an existing one too)
 
 ```
 dk proxy new <YOUR_PROXY_ALIAS>
 ```
 
-2. Get the configs for the proxy you want to run:
+### Get the configs for the proxy you want to run
 
 ```
 dk proxy getenv <YOUR_PROXY_ALIAS>
 ```
 
-The above will download an `.env` file to [the](the) current folder
+The above will download an `.env` file to the current folder
 
-3. Now Initialize the k8s proxy with:
+### Now Initialize the k8s proxy with:
+
+The PATH_TO_DOT_ENV_FILE is where the `.env` file will be downloaded to (in the `getenv` step). You can have an additional .params file that stores more details about your cluster setup (this is usually stuff that wont be in the .env file).  See the `default_params` files for an example.
+
+If you do not specify the `<PROXY_FOLDER>` the proxy will be installed in `./proxies/<YOUR_PROXY_ALIAS>` folder.
 
 ```
 dk proxy initk8s <PATH_TO_DOT_ENV_FILE> <PATH_TO_DOT_PARAMS_FILE> <PROXY_FOLDER> --storage-type=[local|multiefs]
 ```
-
-The PATH_TO_DOT_ENV_FILE is where the `.env` file was downloaded in the step 2 (getenv)
-You can have an additional .params file that stores more details about your cluster setup (this is usually stuff that wont be in the .env file).  See the `default_params` files for an example.
-
-If you do not specify the `<PROXY_FOLDER>` the proxy will be installed in `./proxies/<YOUR_PROXY_ALIAS>` folder.
 
 ## Start your proxy
 
@@ -101,7 +106,7 @@ Now ensure minikube has mounted the above created local folders so they are visi
 sh mkmount.sh
 ```
 
-You should see something like this:
+You should see something like the below.   Do not kill this process - open in a new window if necessary (or run as a daemon mode if you are running on a seperate VM).
 
 ```
  % sh mkmounts.sh
@@ -119,17 +124,13 @@ You should see something like this:
 📌  NOTE: This process must stay alive for the mount to be accessible ...
 ```
 
-Do not kill this process - open in a new window if necessary (or run as a daemon mode if you are running on a seperate VM).
-
 ### Start your Storage
 
-You can setup your storage (storage classes, PVCs, PVs etc) with:
+You can setup your storage (storage classes, PVCs, PVs etc) with the command below.  Note that this file is also generated as part of the `dk proxy initk8s` command.   There you can choose whether you want to do local or efs etc.
 
 ```
 sh storage.sh
 ```
-
-Note that this file is also generated as part of the `dk proxy initk8s` command.   There you can choose whether you want to do local or eks etc.
 
 ## Start your cluster!
 
