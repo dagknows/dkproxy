@@ -1,19 +1,21 @@
 #/bin/bash
 
-LINUX_TYPE=grep -E -w 'NAME' /etc/os-release | sed -e "s/NAME=//g" | sed -e "s/\"//g"
+LINUX_TYPE=`grep -E -w 'NAME' /etc/os-release | sed -e "s/NAME=//g" | sed -e "s/\"//g"`
+
+echo LINUX_TYPE=$LINUX_TYPE
 
 if [ x"$LINUX_TYPE" = "x" ]; then
     echo "Could not determine linux type.   Only Amazon Linux, Ubuntu or RHEL supported"
 fi
 
-if [ x"$LINUX_TYPE" = "Amazon Linux" ]; then
+if [ x"$LINUX_TYPE" = "xAmazon Linux" ]; then
   sh install_amazonlinux.sh
 fi
 
-if [ x"$LINUX_TYPE" = "Redhat" ]; then
+if [ x"$LINUX_TYPE" = "xRedhat" ]; then
   sh install_rhel.sh
 fi
 
-if [ x"$LINUX_TYPE" = "Ubuntu" ]; then
+if [ x"$LINUX_TYPE" = "xUbuntu" ]; then
   sh install_ubuntu.sh
 fi
