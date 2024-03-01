@@ -6,12 +6,11 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 
 You will need the following:
 
-* One of the linux distros:
+* One of the linux distros (with 50GB of disk space):
   * Ubuntu 22.04+
   * Amazon Linux 2023+
   * RedHat
 * git
-* python (3.10+)
 
 ## Setup your Environment
 
