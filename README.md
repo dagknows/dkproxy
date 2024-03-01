@@ -6,7 +6,10 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 
 You will need the following:
 
-* Ubuntu VM Running Docker
+* One of the linux distros:
+  * Ubuntu 22.04+
+  * Amazon Linux 2023+
+  * RedHat
 * git
 * python (3.10+)
 
@@ -23,7 +26,8 @@ git clone https://github.com/dagknows/dkproxy.git
 Run the following installer.  It will setup all the dependencies needed to run your proxy.
 
 ```
-cd dkproxy && sh install.sh
+cd dkproxy
+sh install.sh
 ```
 
 ### Configure DagKnows CLI
