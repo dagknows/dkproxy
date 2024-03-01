@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Installer for Ubuntu
-sudo yum update
+sudo yum update -y
 sudo yum install -y make git docker unzip python3-pip ca-certificates gnupg
 # sudo yum install -y make docker.io docker docker-compose  docker-compose-v2
 
