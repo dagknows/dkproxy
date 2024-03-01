@@ -1,9 +1,19 @@
 #/bin/bash
 
-## Installer for Linux
-apt-get update
-apt-get install -y make
+LINUX_TYPE=grep -E -w 'NAME' /etc/os-release | sed -e "s/NAME=//g" | sed -e "s/\"//g"
 
-make prepare
+if [ x"$LINUX_TYPE" = "x" ]; then
+    echo "Could not determine linux type.   Only Amazon Linux, Ubuntu or RHEL supported"
+fi
 
-pip install dagknows --force-reinstall
+if [ x"$LINUX_TYPE" = "Amazon Linux" ]; then
+  sh install_amazonlinux.sh
+fi
+
+if [ x"$LINUX_TYPE" = "Redhat" ]; then
+  sh install_rhel.sh
+fi
+
+if [ x"$LINUX_TYPE" = "Ubuntu" ]; then
+  sh install_ubuntu.sh
+fi
