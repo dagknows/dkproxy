@@ -12,7 +12,7 @@ if [ x"$LINUX_TYPE" = "xAmazon Linux" ]; then
   sh install_amazonlinux.sh
 fi
 
-if [ x"$LINUX_TYPE" = "xRedhat" ]; then
+if [ x"$LINUX_TYPE" = "xRed Hat Enterprise Linux" ]; then
   sh install_rhel.sh
 fi
 
