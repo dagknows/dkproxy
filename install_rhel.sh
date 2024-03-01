@@ -1,20 +1,17 @@
 #!/bin/bash
 
-## Installer for Ubuntu
+## Installer for RHEL
 sudo yum update -y
 sudo yum install -y make git docker unzip python3-pip ca-certificates gnupg
-# sudo yum install -y make docker.io docker docker-compose  docker-compose-v2
-
-echo "Adding user to docker user group..."
+sudo yum install -y docker-ce --allowerasing
 sudo usermod -aG docker ${USER}
-sudo chkconfig docker on
+sudo systemctl enable --now docker
+systemctl is-active docker
 
 echo "Installing Docker Compose Plugin"
-DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-mkdir -p $DOCKER_CONFIG/cli-plugins
-curl -SL https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
-
+curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose
+sudo mv docker-compose /usr/local/bin && sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 make prepare
 
