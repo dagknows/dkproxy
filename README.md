@@ -28,6 +28,10 @@ Run the following installer.  It will setup all the dependencies needed to run y
 ```
 cd dkproxy
 sh install.sh
+
+# This logs you out so you can log back in - this is needed because current user was
+# added to the docker group and a logout/login is needed for this to take effect.
+exit  
 ```
 
 ### Configure DagKnows CLI
