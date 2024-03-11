@@ -1,4 +1,4 @@
-# DK Proxy setup instructions
+# Dagknows Proxy setup instructions for Kubernetes
 
 ## Install Helm
 
