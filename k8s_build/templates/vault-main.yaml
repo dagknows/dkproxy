@@ -19,6 +19,13 @@ spec:
         - name: vault
           image: gcr.io/{{SUPER_USER_ORG}}-proxy-images/vault:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
           command: ["vault"]
           args: ["server", "-config=/vault/config/local.json"]
           ports:
