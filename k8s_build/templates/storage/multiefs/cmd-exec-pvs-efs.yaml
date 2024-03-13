@@ -1,0 +1,42 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-cmdexec-logs-volume
+  labels:
+    purpose: cmdexec-logs
+    namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{CMDEXEC_LOGS_EFS_FILESYSTEM_ID}}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{PROXY_NAMESPACE}}-cmdexec-keys-volume
+  labels:
+    purpose: cmdexec-keys
+    namespace: {{PROXY_NAMESPACE}}
+  finalizers:
+  - kubernetes
+spec:
+  storageClassName: {{PROXY_NAMESPACE}}-efs-storageclass
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 10Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{CMDEXEC_KEYS_EFS_FILESYSTEM_ID}}
