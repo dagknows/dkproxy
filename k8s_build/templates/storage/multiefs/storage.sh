@@ -5,9 +5,9 @@ if [ x"$1" = "xdelete" ]; then
   kubectl delete -f vault-pvcs-efs.yaml -n {{PROXY_NAMESPACE}} --grace-period=0 --force
   kubectl delete -f cmd-exec-pvcs-efs.yaml -n {{PROXY_NAMESPACE}} --grace-period=0 --force
   kubectl delete -f outpost-pvcs-efs.yaml -n {{PROXY_NAMESPACE}} --grace-period=0 --force
-  kubectl delete -f vault-pvs-efs.yaml --grace-period=0 --force
-  kubectl delete -f cmd-exec-pvs-efs.yaml --grace-period=0 --force
-  kubectl delete -f outpost-pvs-efs.yaml --grace-period=0 --force
+  kubectl delete -f vault-pvs-efs.yaml --grace-period=0 --force &
+  kubectl delete -f cmd-exec-pvs-efs.yaml --grace-period=0 --force &
+  kubectl delete -f outpost-pvs-efs.yaml --grace-period=0 --force &
   kubectl delete -f storageclasses-efs.yaml
 else
   # Create all storage classes
