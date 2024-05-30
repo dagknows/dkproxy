@@ -17,7 +17,7 @@ do
 done
 
 echo "Patching and deleting all PVs for proxy..."
-for res in `kubectl get pv -o name | grep $PROXY_NAMESPACE`
+for res in `kubectl get pv -o name | grep "$PROXY_NAMESPACE-"`
 do
   echo "kubectl patch $res  -p '{"metadata": {"finalizers": null}}'"
   echo "kubectl delete $res"
@@ -38,7 +38,7 @@ if [ x"$COMMIT" = "xyes" ]; then
   done
 
   echo "Patching and deleting all PVs for proxy..."
-  for res in `kubectl get pv -o name | grep $PROXY_NAMESPACE`
+  for res in `kubectl get pv -o name | grep "$PROXY_NAMESPACE-"`
   do
     echo "Patching Res: $res"
     kubectl patch $res  -p '{"metadata": {"finalizers": null}}'
