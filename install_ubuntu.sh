@@ -18,4 +18,5 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 make prepare
 
 python3 -m venv ~/dkenv
+~/dkenv/bin/pip install setuptools
 ~/dkenv/bin/pip install dagknows --force-reinstall
