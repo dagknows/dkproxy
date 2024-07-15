@@ -3,7 +3,7 @@
 ## Installer for Ubuntu
 sudo apt-get update
 sudo apt-get install -y make
-sudo apt-get install -y make docker.io docker docker-compose unzip python3-pip docker-compose-v2
+sudo apt-get install -y make docker.io docker-compose unzip python3-pip docker-compose-v2 python3-venv
 echo "Installing Docker Repos..."
 sudo apt-get install ca-certificates curl gnupg
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -17,4 +17,5 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
 make prepare
 
-pip install dagknows --force-reinstall
+python3 -m venv ~/dkenv
+~/dkenv/bin/pip install dagknows --force-reinstall
