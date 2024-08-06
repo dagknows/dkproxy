@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: outpost
-          image: gcr.io/{{SUPER_USER_ORG}}-proxy-images/outpost:latest ## - To be replaced by GCR image.
+          image: public.ecr.aws/n5k3t9x2/outpost:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
           resources:
             requests:

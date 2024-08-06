@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: cmd-exec
-          image: gcr.io/{{SUPER_USER_ORG}}-proxy-images/cmd_exec:latest ## - To be replaced by GCR image.
+          image: public.ecr.aws/n5k3t9x2/cmd_exec:latest ## - To be replaced by GCR image.
           imagePullPolicy: "Always"
           resources:
             requests:

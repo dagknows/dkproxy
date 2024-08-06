@@ -45,5 +45,5 @@ ensureitems:
 	-sudo chmod -R a+rwx vault/data
 
 pull:
-	docker pull gcr.io/dagknows-proxy-images/outpost:latest
-	docker pull gcr.io/dagknows-proxy-images/cmd_exec:latest
+	docker pull public.ecr.aws/n5k3t9x2/outpost:latest
+	docker pull public.ecr.aws/n5k3t9x2/cmd_exec:latest
