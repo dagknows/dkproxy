@@ -1,4 +1,5 @@
 version: '3'
+name: ${PROXY_ALIAS}
 services:
   cmd-exec:
     restart: always
@@ -9,7 +10,7 @@ services:
       - FLASK_ENV=debug
     volumes:
       - ./cmd_exec/logs:/usr/src/app/logs
-      - ./cmd_exec/src/keys:/usr/src/app/src/keys
+      - ./cmd_exec/src/keys:/root/.keys
     command: ["python", "src/cmd_exec.py"]
 
   vault:
