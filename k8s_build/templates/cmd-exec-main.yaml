@@ -32,9 +32,6 @@ spec:
               name: logs-vol
             - mountPath: /usr/src/app/src/keys
               name: keys-vol
-#            - name: secrets-vol
-#              mountPath: /usr/src/app/src/keys/public_key.pem
-#              subPath: public_key.pem
       volumes:
         - name: logs-vol
           persistentVolumeClaim:
