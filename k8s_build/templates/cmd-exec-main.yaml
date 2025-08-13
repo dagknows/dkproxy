@@ -30,7 +30,7 @@ spec:
           volumeMounts:
             - mountPath: /usr/src/app/logs
               name: logs-vol
-            - mountPath: /usr/src/app/src/keys
+            - mountPath: /root/.keys
               name: keys-vol
       volumes:
         - name: logs-vol

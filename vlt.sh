@@ -32,5 +32,5 @@ if [ x"$CONTAINER_ID" = "x" ]; then
   exit 1
 fi
 
-CMD="docker exec -it ${CONTAINER_ID} dkvault --vault-url=https://vault:8200 --vault-unseal-tokens-file ./src/keys/vault_unseal.keys $*"
+CMD="docker exec -it ${CONTAINER_ID} dkvault --vault-url=https://vault:8200 --vault-unseal-tokens-file /root/.keys/vault_unseal.keys $*"
 eval $CMD
