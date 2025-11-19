@@ -11,6 +11,7 @@ services:
     volumes:
       - ./cmd_exec/logs:/usr/src/app/logs
       - ./cmd_exec/src/keys:/root/.keys
+      - ./home:/home
     command: ["python", "src/cmd_exec.py"]
 
   vault:
@@ -34,6 +35,7 @@ services:
       - ./outpost/logs:/usr/src/app/logs
       - ./outpost/jobs:/app/jobs
       - ./outpost/sidecar:/app/sidecar
+      - ./home:/home
     environment:
       - PYENV_ROOT=/app/sidecar/pyrunner/pyenv
       - PYRUNNER_ROOT=/app/sidecar/pyrunner
