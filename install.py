@@ -57,11 +57,29 @@ def run_command(cmd, shell=True, check=True, capture_output=False):
             raise
         return False
 
+def check_python_venv_available():
+    """Check if python3-venv is available"""
+    try:
+        result = run_command("python3 -m venv --help > /dev/null 2>&1", check=False)
+        return result
+    except Exception:
+        return False
+
+def check_pip_available():
+    """Check if pip3 is available"""
+    return shutil.which('pip3') is not None or shutil.which('pip') is not None
+
 def check_installation_state():
     """Check the current state of installation to allow resuming"""
     state = {
         'docker_installed': shutil.which('docker') is not None,
         'make_installed': shutil.which('make') is not None,
+        'docker_compose_installed': shutil.which('docker-compose') is not None or os.path.exists(os.path.expanduser('~/.docker/cli-plugins/docker-compose')),
+        'unzip_installed': shutil.which('unzip') is not None,
+        'python3_pip_available': check_pip_available(),
+        'python3_venv_available': check_python_venv_available(),
+        'curl_installed': shutil.which('curl') is not None,
+        'gnupg_installed': shutil.which('gpg') is not None,
         'venv_exists': os.path.exists(os.path.expanduser('~/dkenv')),
         'dk_installed': False,
         'dk_configured': False,
@@ -204,9 +222,26 @@ def setup_virtual_environment():
         print_success("Virtual environment exists at ~/dkenv")
     else:
         print_info("Virtual environment not found at ~/dkenv")
+        
+        # Check if python3-venv is available
+        if not check_python_venv_available():
+            print_error("python3-venv module is not available")
+            print_error("This is required to create virtual environments")
+            print()
+            print_info("The installation script (install.sh) should have installed this.")
+            print_info("Please run the installation script to install all dependencies:")
+            print_info("  bash install.sh")
+            print()
+            print_info("Or manually install python3-venv:")
+            print_info("  Ubuntu/Debian: sudo apt install python3-venv")
+            print_info("  Amazon Linux: sudo yum install python3")
+            print_info("  RHEL: sudo yum install python3")
+            return False
+        
         print_info("Creating virtual environment...")
         if not run_command("python3 -m venv ~/dkenv", check=False):
             print_error("Failed to create virtual environment")
+            print_error("Try running: bash install.sh")
             return False
         print_success("Virtual environment created")
         
@@ -569,13 +604,56 @@ def main():
             print_error("Internet connection required for installation")
             sys.exit(1)
         
+        # Check if all critical dependencies are installed
+        # Note: We check the most critical ones. install.sh also installs ca-certificates
+        # which is harder to check for, so we rely on the critical checks.
+        dependencies_complete = (
+            state['docker_installed'] and 
+            state['make_installed'] and 
+            state['docker_compose_installed'] and 
+            state['unzip_installed'] and
+            state['python3_pip_available'] and
+            state['python3_venv_available'] and
+            state['curl_installed'] and
+            state['gnupg_installed']
+        )
+        
         # Install dependencies if needed
-        if not state['docker_installed'] or not state['make_installed']:
+        if not dependencies_complete:
+            missing = []
+            if not state['docker_installed']:
+                missing.append("docker")
+            if not state['make_installed']:
+                missing.append("make")
+            if not state['docker_compose_installed']:
+                missing.append("docker-compose")
+            if not state['unzip_installed']:
+                missing.append("unzip")
+            if not state['python3_pip_available']:
+                missing.append("python3-pip")
+            if not state['python3_venv_available']:
+                missing.append("python3-venv")
+            if not state['curl_installed']:
+                missing.append("curl")
+            if not state['gnupg_installed']:
+                missing.append("gnupg")
+            
+            if missing:
+                print_info(f"Missing dependencies: {', '.join(missing)}")
+            
             if not install_dependencies():
                 print_error("Dependency installation failed")
                 sys.exit(1)
         else:
-            print_success("System dependencies already installed (skipping)")
+            print_success("All system dependencies detected")
+            print()
+            response = input(f"{Colors.BOLD}Do you want to run install.sh anyway to ensure all packages are up to date? (yes/no) [no]: {Colors.ENDC}").strip().lower()
+            if response in ['yes', 'y']:
+                if not install_dependencies():
+                    print_error("Dependency installation failed")
+                    sys.exit(1)
+            else:
+                print_info("Skipping dependency installation")
         
         # Ensure Docker service is running
         print_header("Ensuring Docker Service is Running")
