@@ -252,9 +252,9 @@ def setup_virtual_environment():
     if os.path.exists(dk_path):
         print_success("dagknows CLI found in virtual environment")
         
-        # Check version
+        # Check version - must activate venv first
         try:
-            result = run_command(f"{dk_path} version 2>&1", capture_output=True, check=False)
+            result = run_command("source ~/dkenv/bin/activate && dk version 2>&1", capture_output=True, check=False)
             if result and 'DagKnows CLI Version' in result:
                 # Extract version
                 for line in result.split('\n'):
@@ -282,9 +282,9 @@ def setup_virtual_environment():
     if run_command("~/dkenv/bin/pip install dagknows --force-reinstall", check=False):
         print_success("dagknows CLI installed successfully")
         
-        # Verify installation
+        # Verify installation - must activate venv first
         try:
-            result = run_command(f"{dk_path} version 2>&1", capture_output=True, check=False)
+            result = run_command("source ~/dkenv/bin/activate && dk version 2>&1", capture_output=True, check=False)
             if result and 'DagKnows CLI Version' in result:
                 for line in result.split('\n'):
                     if 'DagKnows CLI Version' in line:
@@ -310,21 +310,35 @@ def configure_dk_cli():
     print_header("Configuring DagKnows CLI")
     
     dk_config_path = os.path.expanduser('~/.dk/config')
+    
     if os.path.exists(dk_config_path):
-        print_success("DagKnows CLI already configured")
+        print_success("DagKnows CLI configuration file found")
         print_info(f"Config file: {dk_config_path}")
         
-        response = input(f"{Colors.BOLD}Do you want to reconfigure? (yes/no) [no]: {Colors.ENDC}").strip().lower()
-        if response not in ['yes', 'y']:
-            print_info("Keeping existing configuration")
-            return True
+        # Try to verify the configuration works - must activate venv first
+        try:
+            result = run_command("source ~/dkenv/bin/activate && dk proxy list 2>&1", capture_output=True, check=False)
+            if result and ("error" not in result.lower() or "proxy" in result.lower()):
+                print_success("DagKnows CLI appears to be working")
+                response = input(f"{Colors.BOLD}Do you want to reconfigure? (yes/no) [no]: {Colors.ENDC}").strip().lower()
+                if response not in ['yes', 'y']:
+                    print_info("Keeping existing configuration")
+                    return True
+            else:
+                print_warning("DagKnows CLI configuration may not be working properly")
+                print_info("Will proceed with reconfiguration")
+        except Exception:
+            print_warning("Could not verify DagKnows CLI configuration")
+            print_info("Will proceed with reconfiguration")
     
     print_info("Please provide your DagKnows server information")
-    print_warning("IMPORTANT: DAGKNOWS_SERVER_URL must use https even when using IP address")
+    print_warning("IMPORTANT: Server URL must use https even when using IP address")
+    print()
+    print_info("You will be prompted for authentication credentials (username/password or access token)")
     print()
     
     while True:
-        server_url = input(f"{Colors.BOLD}DagKnows Server URL (e.g., https://your-server.com or https://your-ip): {Colors.ENDC}").strip()
+        server_url = input(f"{Colors.BOLD}DagKnows Server URL (e.g., https://your-server.com or https://IP_ADDRESS): {Colors.ENDC}").strip()
         
         if not server_url:
             print_error("Server URL is required!")
@@ -342,19 +356,41 @@ def configure_dk_cli():
     
     print()
     print_info(f"Configuring DagKnows CLI with server: {server_url}")
-    print_info("You will be prompted for authentication...")
     print()
     
-    dk_path = os.path.expanduser('~/dkenv/bin/dk')
-    
     try:
-        # Run dk config init with the server URL
-        subprocess.run(f"{dk_path} config init --api-host {server_url}", shell=True, check=True)
-        print_success("DagKnows CLI configured successfully")
+        # Run dk config init with the server URL - must activate venv first
+        # This will prompt for username/password or access_token
+        subprocess.run(f"source ~/dkenv/bin/activate && dk config init --api-host {server_url}", 
+                      shell=True, check=True, executable='/bin/bash')
+        
+        print()
+        print_info("Verifying configuration...")
+        
+        # Verify the configuration worked - must activate venv first
+        try:
+            result = run_command("source ~/dkenv/bin/activate && dk proxy list 2>&1", 
+                               capture_output=True, check=False)
+            if result and "error" in result.lower() and "401" in result:
+                print_error("Authentication failed. Please check your credentials.")
+                return False
+            elif result and "error" in result.lower():
+                print_warning(f"Warning: {result}")
+                print_warning("Configuration may not be complete, but continuing...")
+            else:
+                print_success("DagKnows CLI configured and verified successfully")
+        except Exception as e:
+            print_warning(f"Could not verify configuration: {e}")
+            print_warning("Continuing anyway...")
+        
         return True
     except subprocess.CalledProcessError:
         print_error("Failed to configure DagKnows CLI")
         print_error("Please check your server URL and credentials")
+        print()
+        print_info("You can try configuring manually:")
+        print_info("  source ~/dkenv/bin/activate")
+        print_info(f"  dk config init --api-host {server_url}")
         return False
     except KeyboardInterrupt:
         print_info("\nConfiguration interrupted by user")
@@ -389,7 +425,12 @@ def setup_proxy():
     
     print()
     print_info(f"Creating proxy: {proxy_name}")
-    print_info("This will run: sh install_proxy.sh {proxy_name}")
+    print_info("This will run the following commands:")
+    print_info("  1. dk proxy list - List existing proxies")
+    print_info(f"  2. dk proxy new {proxy_name} - Create new proxy")
+    print_info(f"  3. dk proxy getenv {proxy_name} - Get environment variables from server")
+    print()
+    print_warning("NOTE: You must be authenticated with proper permissions to create proxies")
     print()
     
     # Source the virtual environment and run install_proxy.sh
@@ -397,11 +438,87 @@ def setup_proxy():
         # The install_proxy.sh script runs dk commands, so we need the venv active
         cmd = f"source ~/dkenv/bin/activate && sh install_proxy.sh {proxy_name}"
         subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
-        print_success(f"Proxy '{proxy_name}' created successfully")
+        print()
+        print_success("install_proxy.sh completed")
         
-        # Save proxy name to .env for future reference
-        with open('.env', 'w') as f:
-            f.write(f"PROXY_NAME={proxy_name}\n")
+        # Verify that .env file was created and has required variables
+        print()
+        print_info("Verifying proxy configuration...")
+        
+        if not os.path.exists('.env'):
+            print_error(".env file was not created!")
+            print_error("This usually means:")
+            print_error("  1. dk proxy new failed - proxy wasn't created on server")
+            print_error("  2. dk proxy getenv failed - couldn't retrieve env vars from server")
+            print_error("  3. Authentication issue - check your dk config")
+            print()
+            print_info("To debug:")
+            print_info("  1. source ~/dkenv/bin/activate")
+            print_info("  2. dk proxy list  (check if proxy exists)")
+            print_info(f"  3. dk proxy getenv {proxy_name}  (try to get env vars)")
+            return False
+        
+        # Check for required environment variables in .env
+        # Based on the image provided, these are the key variables needed
+        required_vars = {
+            'PROXY_ALIAS': 'The name/alias of the proxy',
+            'DAGKNOWS_URL': 'The main DagKnows server URL',
+            'DAGKNOWS_PROXY_URL': 'The DagKnows proxy/wsfe URL',
+            'PROXY_SESSION_ID': 'The proxy session identifier'
+        }
+        
+        env_content = {}
+        with open('.env', 'r') as f:
+            for line in f:
+                if '=' in line and not line.strip().startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    env_content[key] = value
+        
+        # Check which required vars are missing or empty
+        missing_vars = {}
+        for var, description in required_vars.items():
+            if var not in env_content or not env_content[var]:
+                missing_vars[var] = description
+        
+        if missing_vars:
+            print_error(f"❌ {len(missing_vars)} required environment variable(s) are missing or empty!")
+            print()
+            for var, desc in missing_vars.items():
+                print_error(f"  Missing: {var}")
+                print_info(f"           {desc}")
+            print()
+            print_warning("Current .env file contents:")
+            with open('.env', 'r') as f:
+                content = f.read().strip()
+                if content:
+                    for line in content.split('\n'):
+                        if line.strip():
+                            print(f"  {line}")
+                else:
+                    print("  (file is empty)")
+            print()
+            print_error("The proxy will NOT start without these variables!")
+            print()
+            print_info("To fix this:")
+            print_info("  1. Make sure the proxy was created successfully:")
+            print_info("     source ~/dkenv/bin/activate && dk proxy list")
+            print_info("  2. Regenerate the .env file:")
+            print_info(f"     dk proxy getenv {proxy_name}")
+            print_info("  3. Verify .env has content:")
+            print_info("     cat .env")
+            print()
+            return False
+        else:
+            print_success("✓ All required environment variables found!")
+            print()
+            print_info(f"  PROXY_ALIAS: {env_content['PROXY_ALIAS']}")
+            print_info(f"  DAGKNOWS_URL: {env_content['DAGKNOWS_URL']}")
+            print_info(f"  DAGKNOWS_PROXY_URL: {env_content.get('DAGKNOWS_PROXY_URL', 'N/A')}")
+            print_info(f"  PROXY_SESSION_ID: {env_content.get('PROXY_SESSION_ID', '(set)')[:20]}...")
+            
+            # Also show optional but useful vars
+            if 'SUPER_USER_ORG' in env_content:
+                print_info(f"  SUPER_USER_ORG: {env_content['SUPER_USER_ORG']}")
         
         return True
     except subprocess.CalledProcessError:
@@ -446,6 +563,50 @@ def start_proxy(use_sg=False):
     """Start the proxy services"""
     print_header("Starting Proxy Services")
     
+    # Verify .env file exists before starting
+    if not os.path.exists('.env'):
+        print_error(".env file not found!")
+        print_error("Cannot start proxy without proper configuration")
+        print()
+        print_info("Please ensure proxy was created successfully:")
+        print_info("  1. Activate venv: source ~/dkenv/bin/activate")
+        print_info("  2. List proxies: dk proxy list")
+        print_info("  3. Get env for your proxy: dk proxy getenv <proxy_name>")
+        return False
+    
+    # Check if .env has required variables
+    env_vars = {}
+    with open('.env', 'r') as f:
+        for line in f:
+            if '=' in line and not line.strip().startswith('#'):
+                key, value = line.strip().split('=', 1)
+                env_vars[key] = value
+    
+    # These are the critical variables needed for docker-compose
+    required_vars = ['DAGKNOWS_URL', 'PROXY_ALIAS', 'DAGKNOWS_PROXY_URL']
+    missing = [var for var in required_vars if var not in env_vars or not env_vars[var]]
+    
+    if missing:
+        print_error(f"❌ Missing required environment variables: {', '.join(missing)}")
+        print_error("Cannot start proxy without proper configuration")
+        print()
+        print_warning("Current .env contents:")
+        with open('.env', 'r') as f:
+            content = f.read().strip()
+            if content:
+                for line in content.split('\n'):
+                    if line.strip():
+                        print(f"  {line}")
+            else:
+                print("  (empty)")
+        print()
+        print_info("To fix:")
+        print_info("  1. source ~/dkenv/bin/activate")
+        print_info("  2. dk proxy list (verify proxy exists)")
+        print_info("  3. dk proxy getenv <proxy_name> (regenerate .env)")
+        print_info("  4. cat .env (verify it has content)")
+        return False
+    
     print_info("Running 'make up logs'...")
     print_info("This will start the proxy containers and show logs")
     print_info("Press Ctrl+C to stop viewing logs (proxy will keep running)")
@@ -463,21 +624,47 @@ def start_proxy(use_sg=False):
         return True
     except subprocess.CalledProcessError:
         print_error("Failed to start proxy services")
+        print()
+        print_info("Troubleshooting steps:")
+        print_info("  1. Check .env file has all required variables")
+        print_info("  2. Verify proxy was created: source ~/dkenv/bin/activate && dk proxy list")
+        print_info("  3. Regenerate env: dk proxy getenv <proxy_name>")
+        print_info("  4. Try manually: make up logs")
         return False
     except KeyboardInterrupt:
         print_info("\nLogs stopped by user")
         print_success("Proxy is running in the background")
         return True
 
-def print_final_instructions(proxy_name, used_sg=False):
+def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     """Print final success message and instructions"""
-    print_header("Installation Complete!")
+    if proxy_started:
+        print_header("Installation Complete!")
+        print_success("DagKnows Proxy has been successfully installed!")
+    else:
+        print_header("Installation Incomplete")
+        print_warning("DagKnows Proxy installation completed with warnings")
+        print_warning("Proxy services did not start - see troubleshooting below")
     
-    print_success("DagKnows Proxy has been successfully installed!")
     print()
     
     if proxy_name:
         print(f"{Colors.BOLD}Proxy Name:{Colors.ENDC} {Colors.OKCYAN}{proxy_name}{Colors.ENDC}")
+        print()
+    
+    if not proxy_started:
+        print(f"{Colors.WARNING}{Colors.BOLD}⚠ Proxy Did Not Start{Colors.ENDC}")
+        print(f"{Colors.WARNING}The .env file may be missing required variables.{Colors.ENDC}")
+        print()
+        print(f"{Colors.BOLD}To fix this:{Colors.ENDC}")
+        print(f"  1. Activate virtual environment: {Colors.OKCYAN}source ~/dkenv/bin/activate{Colors.ENDC}")
+        print(f"  2. List your proxies: {Colors.OKCYAN}dk proxy list{Colors.ENDC}")
+        if proxy_name:
+            print(f"  3. Get environment variables: {Colors.OKCYAN}dk proxy getenv {proxy_name}{Colors.ENDC}")
+        else:
+            print(f"  3. Get environment variables: {Colors.OKCYAN}dk proxy getenv <proxy_name>{Colors.ENDC}")
+        print(f"  4. Verify .env file has content: {Colors.OKCYAN}cat .env{Colors.ENDC}")
+        print(f"  5. Start proxy: {Colors.OKCYAN}make up logs{Colors.ENDC}")
         print()
     
     if used_sg:
@@ -672,12 +859,10 @@ def main():
             # Don't exit, continue to try starting anyway
         
         # Start proxy
-        if not start_proxy(use_sg):
-            print_error("Proxy startup failed")
-            sys.exit(1)
+        proxy_started = start_proxy(use_sg)
         
-        # Success!
-        print_final_instructions(proxy_name, use_sg)
+        # Show final instructions (even if proxy didn't start, so user knows what to do)
+        print_final_instructions(proxy_name, use_sg, proxy_started)
         
     except KeyboardInterrupt:
         print_error("\n\nInstallation interrupted by user")
