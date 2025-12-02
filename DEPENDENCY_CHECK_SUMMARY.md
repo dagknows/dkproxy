@@ -79,27 +79,32 @@ If the wizard only checked for Docker and make (original implementation), it wou
 
 ## Behavior
 
-### All Dependencies Present
-```
-✓ All system dependencies detected
+The wizard **always** runs `install.sh` to ensure all dependencies are properly installed and up to date:
 
-Do you want to run install.sh anyway to ensure all packages are up to date? (yes/no) [no]:
 ```
-
-User can optionally re-run to ensure everything is up to date.
-
-### Missing Dependencies
-```
-ℹ Missing dependencies: python3-venv, unzip, curl
+ℹ Checking operating system...
+✓ Ubuntu detected
+ℹ Checking internet connectivity...
+✓ Internet connection verified
+ℹ Running install.sh to ensure all dependencies are properly installed...
 
 ============================================================
          Installing System Dependencies             
 ============================================================
 
 ℹ Running install.sh to detect OS and install dependencies...
+ℹ This will install: make, docker, docker-compose, python3-pip, python3-venv, etc.
+
+[Runs bash install.sh]
+
+✓ Dependencies installed successfully
 ```
 
-The wizard will automatically run `install.sh`.
+This ensures:
+- All required packages are installed
+- Packages are up to date
+- Docker group membership is configured
+- Consistent installation regardless of system state
 
 ## Notes on ca-certificates
 

@@ -83,7 +83,7 @@ The wizard will prompt you for:
    ├── OS Detection (Ubuntu/Amazon Linux/RHEL)
    └── Internet Connectivity Check
 
-2. System Dependencies
+2. System Dependencies (Always Runs)
    ├── Run install.sh (OS-specific)
    ├── Install Docker, make, Python tools
    └── Add user to docker group

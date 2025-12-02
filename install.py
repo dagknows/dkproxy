@@ -8,7 +8,6 @@ import os
 import sys
 import subprocess
 import shutil
-import getpass
 import re
 import time
 from pathlib import Path
@@ -393,8 +392,6 @@ def setup_proxy():
     print_info("This will run: sh install_proxy.sh {proxy_name}")
     print()
     
-    dk_path = os.path.expanduser('~/dkenv/bin/dk')
-    
     # Source the virtual environment and run install_proxy.sh
     try:
         # The install_proxy.sh script runs dk commands, so we need the venv active
@@ -604,56 +601,13 @@ def main():
             print_error("Internet connection required for installation")
             sys.exit(1)
         
-        # Check if all critical dependencies are installed
-        # Note: We check the most critical ones. install.sh also installs ca-certificates
-        # which is harder to check for, so we rely on the critical checks.
-        dependencies_complete = (
-            state['docker_installed'] and 
-            state['make_installed'] and 
-            state['docker_compose_installed'] and 
-            state['unzip_installed'] and
-            state['python3_pip_available'] and
-            state['python3_venv_available'] and
-            state['curl_installed'] and
-            state['gnupg_installed']
-        )
+        # Always run install.sh to ensure all dependencies are properly installed
+        # This ensures consistent installation regardless of system state
+        print_info("Running install.sh to ensure all dependencies are properly installed...")
         
-        # Install dependencies if needed
-        if not dependencies_complete:
-            missing = []
-            if not state['docker_installed']:
-                missing.append("docker")
-            if not state['make_installed']:
-                missing.append("make")
-            if not state['docker_compose_installed']:
-                missing.append("docker-compose")
-            if not state['unzip_installed']:
-                missing.append("unzip")
-            if not state['python3_pip_available']:
-                missing.append("python3-pip")
-            if not state['python3_venv_available']:
-                missing.append("python3-venv")
-            if not state['curl_installed']:
-                missing.append("curl")
-            if not state['gnupg_installed']:
-                missing.append("gnupg")
-            
-            if missing:
-                print_info(f"Missing dependencies: {', '.join(missing)}")
-            
-            if not install_dependencies():
-                print_error("Dependency installation failed")
-                sys.exit(1)
-        else:
-            print_success("All system dependencies detected")
-            print()
-            response = input(f"{Colors.BOLD}Do you want to run install.sh anyway to ensure all packages are up to date? (yes/no) [no]: {Colors.ENDC}").strip().lower()
-            if response in ['yes', 'y']:
-                if not install_dependencies():
-                    print_error("Dependency installation failed")
-                    sys.exit(1)
-            else:
-                print_info("Skipping dependency installation")
+        if not install_dependencies():
+            print_error("Dependency installation failed")
+            sys.exit(1)
         
         # Ensure Docker service is running
         print_header("Ensuring Docker Service is Running")

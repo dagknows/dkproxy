@@ -45,7 +45,7 @@ The following files were **intentionally left unchanged** to maintain compatibil
 
 ### 1. Automated Installation Flow
 
-The wizard automates all manual steps:
+The wizard automates all manual steps and **always runs install.sh** to ensure consistent, up-to-date installations:
 
 | Manual Step | Wizard Automation |
 |------------|-------------------|
