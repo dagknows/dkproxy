@@ -4,66 +4,92 @@ The DagKnows proxy runner.   This repo contains a minimal set of compose files f
 
 ## Requirements
 
-You will need the following:
-
 * One of the linux distros (with 50GB of disk space):
   * Ubuntu 22.04+
   * Amazon Linux 2023+
   * RedHat
 * git
+* Python 3
 
-## Setup your Environment
+## Installation
 
-### Checkout this repo.
+### Option 1: Automated Installation (Recommended)
 
-```
+Run the installation wizard which automates all steps:
+
+```bash
 git clone https://github.com/dagknows/dkproxy.git
-```
-
-### Install required packages
-
-Run the following installer.  It will setup all the dependencies needed to run your proxy.
-
-```
 cd dkproxy
+python3 install.py
+```
+
+The wizard will guide you through dependency installation, CLI configuration, proxy setup, and service startup.
+
+### Option 2: Manual Installation
+
+#### 1. Checkout this repo
+
+```bash
+git clone https://github.com/dagknows/dkproxy.git
+cd dkproxy
+```
+
+#### 2. Install required packages
+
+```bash
 sh install.sh
 
-# This logs you out so you can log back in - this is needed because current user was
-# added to the docker group and a logout/login is needed for this to take effect.
-exit  
+# Refresh docker group membership (or logout/login)
+newgrp docker
 ```
 
-### Configure DagKnows CLI
+#### 3. Activate virtual environment
 
-The above installation script also installs the dagknows cli.  The CLI has some easy wrappers to interact with DagKnows as well as setting up/upgrading proxies.  Configure the DagKnows cli by providing an access token.  This will ask you for the host where the saas instance is running.   Replace "localhost" with the address of the host where DagKnows is running (this can vary for onprem or custom installations).  You can obtain an access token from the the App's settings page.
-
-```
-dk config init
+```bash
+source ~/dkenv/bin/activate
 ```
 
+#### 4. Configure DagKnows CLI
 
-### Install your Proxy
+**Important:** Use `https` for the server URL, even with IP addresses.
 
-You can directly install a proxy with:
-
+```bash
+dk config init --api-host https://YOUR_DAGKNOWS_SERVER_URL
 ```
-sh install_proxy.sh {{PROXY_NAME}}
 
-eg:
+#### 5. Install your Proxy
 
+```bash
 sh install_proxy.sh myproxy
 ```
 
-## Run your proxy
+Replace `myproxy` with your desired proxy name (alphanumeric only).
 
+#### 6. Download Docker images
+
+```bash
+make pull
 ```
+
+#### 7. Run your proxy
+
+```bash
 make up logs
 ```
 
-## (Optional) Update your proxy
+## Managing Your Proxy
 
-To update your proxy, simply do:
-
+### View logs
+```bash
+make logs
 ```
+
+### Stop proxy
+```bash
+make down
+```
+
+### Update proxy
+```bash
 make update up logs
 ```
