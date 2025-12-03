@@ -51,11 +51,17 @@ source ~/dkenv/bin/activate
 
 #### 4. Configure DagKnows CLI
 
-**Important:** Use `https` for the server URL, even with IP addresses.
+The installation script installs the DagKnows CLI which provides wrappers to interact with DagKnows and manage proxies. You will need to configure it with your DagKnows server URL and authenticate with an access token.
+
+**Important:** 
+- Use `https` for the server URL, even with IP addresses
+- Obtain an access token from the DagKnows App's Settings page before running this command
 
 ```bash
 dk config init --api-host https://YOUR_DAGKNOWS_SERVER_URL
 ```
+
+This will prompt you for an access token to configure the proxy with the application.
 
 #### 5. Install your Proxy
 
