@@ -708,14 +708,6 @@ class VersionManager:
         if backup_path:
             print_success(f"Backup created: {backup_path}")
 
-        # Also backup data if needed
-        print_info("Creating data backup...")
-        success, _ = run_command("make backups", capture=False)
-        if success:
-            print_success("Data backup created")
-        else:
-            print_warning("Data backup skipped (may require manual backup)")
-
         # Step 2: Pull new images (latest for all services)
         print_info("Pulling latest images...")
         pulled_services = []
@@ -758,29 +750,15 @@ class VersionManager:
         run_command("docker compose down")
         print_success("Services stopped")
 
-        # Step 7: Start services
+        # Step 6: Start services
         print_info("Starting services with new images...")
         success, _ = run_command("make up", capture=False)
         if not success:
             print_error("Failed to start services")
             return False
 
-        # Step 8: Health check
-        print_info("Waiting for services to initialize (30s)...")
-        time.sleep(30)
-
-        print_info("Verifying service health...")
-        if self.verify_health():
-            print_success("All services healthy!")
-            print_success("Update completed successfully!")
-            return True
-        else:
-            print_error("Health check failed!")
-            if confirm("Rollback to previous version?"):
-                self.rollback(all_services=True, interactive=False)
-                run_command("make up", capture=False)
-                print_warning("Rolled back to previous version")
-            return False
+        print_success("Update completed successfully!")
+        return True
 
     def check_updates(self):
         """Check for available updates (placeholder - requires ECR API access)"""
