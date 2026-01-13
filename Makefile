@@ -131,6 +131,9 @@ pull:
 		docker pull hashicorp/vault:latest; \
 	fi
 
+status:
+	@python3 check-status.py
+
 help:
 	@echo "DagKnows Proxy Management Commands"
 	@echo "==================================="
@@ -138,6 +141,7 @@ help:
 	@echo "Service Management:"
 	@echo "  make up           - Start proxy services (+ auto log capture)"
 	@echo "  make down         - Stop all services"
+	@echo "  make status       - Check proxy status and versions"
 	@echo "  make build        - Build Docker images"
 	@echo "  make update       - Update to latest version"
 	@echo "  make pull         - Pull latest Docker images"
@@ -157,6 +161,10 @@ help:
 	@echo "  make logs-clean        - Delete all captured logs"
 	@echo "  make logs-cron-install - Setup daily auto-rotation (cron)"
 	@echo "  make logs-cron-remove  - Remove auto-rotation cron job"
+	@echo ""
+	@echo "Version Management:"
+	@echo "  make version           - Show current versions"
+	@echo "  make help-version      - Show all version management commands"
 
 # ============================================
 # VERSION MANAGEMENT
