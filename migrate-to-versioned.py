@@ -151,93 +151,76 @@ def restore_backup(filepath: str, backup_path: str):
 # MIGRATION FUNCTIONS
 # ============================================
 
-def resolve_latest_tag_from_ecr(service_name: str, digest: str, registry: str = DEFAULT_REGISTRY) -> Optional[str]:
+def resolve_latest_tag_from_ecr(service_name: str, digest: str = None) -> Optional[str]:
     """
-    Query ECR to find semantic version tag for a digest when container uses :latest
+    Query ECR Public to find the semantic version tag for a service.
 
     NOTE: Only works for ECR services (outpost, cmd_exec). Skips vault (DockerHub).
 
     Args:
         service_name: Name of the service (e.g., 'outpost', 'cmd_exec')
-        digest: Image digest (e.g., 'sha256:abc123...')
-        registry: ECR registry URL
+        digest: Optional image digest (e.g., 'sha256:abc123...')
 
     Returns:
-        Semantic version tag (e.g., '1.42') or None if unable to resolve
+        Semantic version tag (e.g., '1.21') or None if unable to resolve
     """
     # Skip non-ECR services (vault uses DockerHub, defaults to :latest)
     if service_name not in ECR_SERVICES:
         return None
 
-    # Extract registry and repository info
-    if 'public.ecr.aws' in registry:
-        # For public ECR, we need to query using AWS CLI
-        # The registry alias is the last part of the registry URL (e.g., 'n5k3t9x2' from 'public.ecr.aws/n5k3t9x2')
-        parts = registry.rstrip('/').split('/')
-        registry_alias = parts[-1] if len(parts) > 1 else None
-        
-        if not registry_alias:
-            print_warning(f"Could not parse registry alias from {registry}")
-            return None
-        
-        # Query AWS ECR Public API for image details
-        # Note: This requires AWS CLI configured with valid credentials AND
-        # you must be the owner of the registry or have explicit permissions
-        repo_name = service_name
-        
-        # Try the describe-images command for public ECR
-        success, output = run_command(
-            f"aws ecr-public describe-images --repository-name {repo_name} "
-            f"--region us-east-1 --output json 2>&1",
-            timeout=30
-        )
+    # Query AWS ECR Public API for image details
+    # Uses service_name directly as repository name (e.g., 'outpost', 'cmd_exec')
+    success, output = run_command(
+        f"aws ecr-public describe-images --repository-name {service_name} "
+        f"--region us-east-1 --output json 2>&1",
+        timeout=30
+    )
 
-        if success:
-            try:
-                ecr_data = json.loads(output)
-                # Find images with matching digest
-                for image_detail in ecr_data.get('imageDetails', []):
-                    image_digest = image_detail.get('imageDigest', '')
-                    # Match digest - handle both full and short digest formats
-                    if digest and (image_digest == digest or digest.endswith(image_digest) or image_digest.endswith(digest.split(':')[-1] if ':' in digest else digest)):
-                        # Get tags for this image, prefer semantic versions over 'latest'
-                        tags = image_detail.get('imageTags', [])
-                        semantic_tags = [t for t in tags if t != 'latest' and not t.startswith('sha')]
-                        if semantic_tags:
-                            # Sort to get the most recent semantic version
-                            try:
-                                semantic_tags.sort(key=lambda x: [int(p) if p.isdigit() else p for p in x.replace('-', '.').split('.')], reverse=True)
-                            except (ValueError, AttributeError):
-                                pass
-                            return semantic_tags[0]
-                
-                # If we couldn't match by digest, try to find the image tagged as 'latest'
-                for image_detail in ecr_data.get('imageDetails', []):
+    if not success:
+        return None
+
+    try:
+        ecr_data = json.loads(output)
+        image_details = ecr_data.get('imageDetails', [])
+
+        # If we have a digest, try to match it first
+        if digest:
+            # Clean up digest format (remove brackets and prefix)
+            clean_digest = digest.strip('[]').split('@')[-1] if '@' in digest else digest
+
+            for image_detail in image_details:
+                ecr_digest = image_detail.get('imageDigest', '')
+                if clean_digest and ecr_digest and (ecr_digest == clean_digest or clean_digest in ecr_digest or ecr_digest in clean_digest):
                     tags = image_detail.get('imageTags', [])
-                    if 'latest' in tags:
-                        semantic_tags = [t for t in tags if t != 'latest' and not t.startswith('sha')]
-                        if semantic_tags:
-                            try:
-                                semantic_tags.sort(key=lambda x: [int(p) if p.isdigit() else p for p in x.replace('-', '.').split('.')], reverse=True)
-                            except (ValueError, AttributeError):
-                                pass
-                            return semantic_tags[0]
-                            
-            except json.JSONDecodeError:
-                print_warning(f"Failed to parse ECR response for {repo_name}")
-            except KeyError:
-                pass
-        else:
-            # AWS CLI failed - show appropriate message
-            if "could not be found" in output.lower() or "repositorynotfound" in output.lower():
-                print_warning(f"Repository {repo_name} not found in your ECR account")
-            elif "accessdenied" in output.lower() or "not authorized" in output.lower():
-                print_warning(f"Not authorized to query ECR for {repo_name}")
-                print_info("  Note: You need to be the registry owner to query ECR Public API")
-            elif "unable to locate credentials" in output.lower():
-                print_warning("AWS credentials not configured")
-            else:
-                print_warning(f"Unable to query ECR for {repo_name} - will use 'latest'")
+                    semantic_tags = [t for t in tags if t != 'latest' and not t.startswith('sha')]
+                    if semantic_tags:
+                        # Sort to get highest version
+                        try:
+                            semantic_tags.sort(
+                                key=lambda x: [int(p) if p.isdigit() else p for p in x.replace('-', '.').split('.')],
+                                reverse=True
+                            )
+                        except (ValueError, AttributeError):
+                            pass
+                        return semantic_tags[0]
+
+        # Fallback: Find the image tagged as 'latest' and get its semantic version
+        for image_detail in image_details:
+            tags = image_detail.get('imageTags', [])
+            if 'latest' in tags:
+                semantic_tags = [t for t in tags if t != 'latest' and not t.startswith('sha')]
+                if semantic_tags:
+                    try:
+                        semantic_tags.sort(
+                            key=lambda x: [int(p) if p.isdigit() else p for p in x.replace('-', '.').split('.')],
+                            reverse=True
+                        )
+                    except (ValueError, AttributeError):
+                        pass
+                    return semantic_tags[0]
+
+    except (json.JSONDecodeError, KeyError):
+        pass
 
     return None
 
@@ -284,14 +267,18 @@ def get_running_images() -> Dict:
                         tag = parts[1]
 
                     # If tag is 'latest', try to resolve actual version from ECR
-                    if tag == 'latest' and digest:
+                    # Only ECR services can have their versions resolved - vault stays at :latest
+                    if tag == 'latest' and service_name in ECR_SERVICES:
                         print_info(f"Detected 'latest' tag for {service_name}, querying ECR for actual version...")
-                        resolved_tag = resolve_latest_tag_from_ecr(service_name, digest, image_name)
+                        resolved_tag = resolve_latest_tag_from_ecr(service_name, digest)
                         if resolved_tag:
                             tag = resolved_tag
                             print_success(f"Resolved {service_name}: latest → {tag}")
                         else:
                             print_warning(f"Could not resolve version for {service_name}, using 'latest'")
+                    elif tag == 'latest' and service_name not in ECR_SERVICES:
+                        # Non-ECR services (vault) stay at :latest - this is expected
+                        pass
 
                     images[service_name] = {
                         'image': image_name,
