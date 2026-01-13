@@ -403,7 +403,7 @@ class VersionManager:
     def pull(self, service: str, tag: str):
         """Pull specific version for a service
 
-        Each service has its own version (e.g., req_router:1.35, taskservice:1.42)
+        Each service has its own version (e.g., outpost:1.42, cmd_exec:1.15, vault:latest)
         """
         if service not in SERVICES:
             print_error(f"Unknown service: {service}")
@@ -412,8 +412,8 @@ class VersionManager:
 
         print_header(f"Pulling {service}:{tag}")
 
-        registry = self.get_registry()
-        image = f"{registry}/{service}:{tag}"
+        # Use get_image_name to handle ECR vs DockerHub correctly
+        image = self.get_image_name(service, tag)
         print_info(f"Pulling {image}...")
 
         success, output = run_command(f"docker pull {image}")
@@ -434,15 +434,16 @@ class VersionManager:
         services = self.manifest.get('services', {})
         if not services:
             print_warning("No versions in manifest. Using :latest for all services.")
-            self.pull('latest')
+            for svc in SERVICES:
+                self.pull(svc, 'latest')
             return
 
-        registry = self.get_registry()
         success_count = 0
 
         for name in SERVICES:
             tag = self.get_current_tag(name)
-            image = f"{registry}/{name}:{tag}"
+            # Use get_image_name to handle ECR vs DockerHub correctly
+            image = self.get_image_name(name, tag)
             print_info(f"Pulling {image}...")
 
             success, _ = run_command(f"docker pull {image}")
@@ -456,18 +457,18 @@ class VersionManager:
 
     def pull_latest(self):
         """Pull :latest for all services and update manifest
-        
+
         This is the recommended way to update all services to latest.
         It pulls images, updates manifest, and resolves semantic versions from ECR.
         """
         print_header("Pulling Latest Images")
 
-        registry = self.get_registry()
         pulled_services = []
 
         # Step 1: Pull all :latest images
         for svc in SERVICES:
-            image = f"{registry}/{svc}:latest"
+            # Use get_image_name to handle ECR vs DockerHub correctly
+            image = self.get_image_name(svc, 'latest')
             print_info(f"Pulling {image}...")
 
             success, _ = run_command(f"docker pull {image}")
@@ -553,14 +554,13 @@ class VersionManager:
                 return False
 
         # Execute rollback
-        registry = self.get_registry()
         success_count = 0
 
         for svc, current, target in rollback_plan:
             print_info(f"Rolling back {svc} to {target}...")
 
-            # Pull the target image
-            image = f"{registry}/{svc}:{target}"
+            # Pull the target image - use get_image_name to handle ECR vs DockerHub
+            image = self.get_image_name(svc, target)
             success, _ = run_command(f"docker pull {image}")
 
             if not success:
@@ -595,9 +595,8 @@ class VersionManager:
             print_info(f"Valid services: {', '.join(SERVICES)}")
             return False
 
-        # Pull the image first
-        registry = self.get_registry()
-        image = f"{registry}/{service}:{tag}"
+        # Pull the image first - use get_image_name to handle ECR vs DockerHub
+        image = self.get_image_name(service, tag)
         print_info(f"Pulling {image}...")
 
         success, output = run_command(f"docker pull {image}")
@@ -655,11 +654,11 @@ class VersionManager:
 
         # Step 2: Pull new images (latest for all services)
         print_info("Pulling latest images...")
-        registry = self.get_registry()
         pulled_services = []
 
         for svc in SERVICES:
-            image = f"{registry}/{svc}:latest"
+            # Use get_image_name to handle ECR vs DockerHub (vault) correctly
+            image = self.get_image_name(svc, 'latest')
             success, _ = run_command(f"docker pull {image}")
             if success:
                 pulled_services.append(svc)
@@ -942,8 +941,15 @@ class VersionManager:
 
         for name in SERVICES:
             var_name = name.upper()
-            image = f"{registry}/{name}"
             tag = self.get_current_tag(name)
+
+            # Handle vault (DockerHub) vs ECR services differently
+            if name in ECR_SERVICES:
+                image = f"{registry}/{name}"
+            elif name == 'vault':
+                image = "hashicorp/vault"
+            else:
+                image = f"{registry}/{name}"
 
             lines.append(f"DK_{var_name}_IMAGE={image}")
             lines.append(f"DK_{var_name}_TAG={tag}")
