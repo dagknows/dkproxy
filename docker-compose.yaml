@@ -3,8 +3,9 @@ name: ${PROXY_ALIAS}
 services:
   cmd-exec:
     restart: always
-    #image: public.ecr.aws/n5k3t9x2/cmd_exec:latest
-    build: ./cmd_exec
+    image: ${DK_CMD_EXEC_IMAGE:-public.ecr.aws/n5k3t9x2/cmd_exec}:${DK_CMD_EXEC_TAG:-latest}
+    # For local development, comment out 'image' above and uncomment 'build' below:
+    # build: ./cmd_exec
     environment:
       - VERBOSE=${VERBOSE}
       - FLASK_ENV=debug
@@ -16,7 +17,7 @@ services:
 
   vault:
     restart: always
-    image: hashicorp/vault:latest
+    image: ${DK_VAULT_IMAGE:-hashicorp/vault}:${DK_VAULT_TAG:-latest}
     cap_add:
           - IPC_LOCK
     volumes:
@@ -29,8 +30,9 @@ services:
 
   outpost:
     restart: always
-    #image: public.ecr.aws/n5k3t9x2/outpost:latest
-    build: ./outpost
+    image: ${DK_OUTPOST_IMAGE:-public.ecr.aws/n5k3t9x2/outpost}:${DK_OUTPOST_TAG:-latest}
+    # For local development, comment out 'image' above and uncomment 'build' below:
+    # build: ./outpost
     volumes:
       - ./outpost/logs:/usr/src/app/logs
       - ./outpost/jobs:/app/jobs
