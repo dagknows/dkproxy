@@ -79,7 +79,7 @@ p2:
 build: down ensureitems
 	docker compose build --no-cache
 
-down:
+down: logs-stop
 	docker compose down --remove-orphans
 
 update: down pull build
