@@ -131,6 +131,16 @@ pull:
 		python3 docker-pull-retry.py hashicorp/vault:latest; \
 	fi
 
+# Pull latest images (updates manifest if versioning is enabled)
+pull-latest:
+	@if [ -f "version-manifest.yaml" ]; then \
+		python3 version-manager.py pull-latest; \
+	else \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/outpost:latest; \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/cmd_exec:latest; \
+		python3 docker-pull-retry.py hashicorp/vault:latest; \
+	fi
+
 status:
 	@python3 check-status.py
 
