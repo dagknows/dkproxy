@@ -4,3 +4,6 @@ keys
 vault/data
 sidecar
 jobs
+# Version management (auto-generated)
+versions.env
+.version-backups/

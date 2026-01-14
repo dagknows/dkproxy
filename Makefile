@@ -79,14 +79,24 @@ p2:
 build: down ensureitems
 	docker compose build --no-cache
 
-down:
+down: logs-stop
 	docker compose down --remove-orphans
 
 update: down pull build
 	echo "Proxy updated.  Bring it up with make up logs"
 
 up: down ensureitems logdirs
-	docker compose up -d
+	@# Generate versions.env from manifest if it exists
+	@if [ -f "version-manifest.yaml" ]; then \
+		python3 version-manager.py generate-env 2>/dev/null || true; \
+	fi
+	@# Start services with version env if available
+	@if [ -f "versions.env" ]; then \
+		set -a && . ./versions.env && set +a && \
+		docker compose up -d; \
+	else \
+		docker compose up -d; \
+	fi
 	@echo "Starting background log capture..."
 	@nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & echo $$! > $(LOG_PID_FILE)
 
@@ -112,8 +122,27 @@ ensureitems:
 	-sudo chmod -R a+rwx vault/data
 
 pull:
-	docker pull public.ecr.aws/n5k3t9x2/outpost:latest
-	docker pull public.ecr.aws/n5k3t9x2/cmd_exec:latest
+	@# Pull images from manifest if available, otherwise pull latest
+	@if [ -f "version-manifest.yaml" ]; then \
+		python3 version-manager.py pull-from-manifest; \
+	else \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/outpost:latest; \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/cmd_exec:latest; \
+		python3 docker-pull-retry.py hashicorp/vault:latest; \
+	fi
+
+# Pull latest images (updates manifest if versioning is enabled)
+pull-latest:
+	@if [ -f "version-manifest.yaml" ]; then \
+		python3 version-manager.py pull-latest; \
+	else \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/outpost:latest; \
+		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/cmd_exec:latest; \
+		python3 docker-pull-retry.py hashicorp/vault:latest; \
+	fi
+
+status:
+	@python3 check-status.py
 
 help:
 	@echo "DagKnows Proxy Management Commands"
@@ -122,6 +151,7 @@ help:
 	@echo "Service Management:"
 	@echo "  make up           - Start proxy services (+ auto log capture)"
 	@echo "  make down         - Stop all services"
+	@echo "  make status       - Check proxy status and versions"
 	@echo "  make build        - Build Docker images"
 	@echo "  make update       - Update to latest version"
 	@echo "  make pull         - Pull latest Docker images"
@@ -141,3 +171,137 @@ help:
 	@echo "  make logs-clean        - Delete all captured logs"
 	@echo "  make logs-cron-install - Setup daily auto-rotation (cron)"
 	@echo "  make logs-cron-remove  - Remove auto-rotation cron job"
+	@echo ""
+	@echo "Version Management:"
+	@echo "  make version           - Show current versions"
+	@echo "  make help-version      - Show all version management commands"
+
+# ============================================
+# VERSION MANAGEMENT
+# ============================================
+
+.PHONY: version version-history version-pull version-set rollback rollback-service rollback-to
+.PHONY: update-safe check-updates resolve-tags migrate-versions generate-env help-version
+
+# Show current versions
+version:
+	@python3 version-manager.py show
+
+# Show version history
+version-history:
+	@python3 version-manager.py history $(SERVICE)
+
+# Pull specific version for ONE service
+# Usage: make version-pull SERVICE=outpost TAG=1.42
+version-pull:
+	@if [ -z "$(SERVICE)" ] || [ -z "$(TAG)" ]; then \
+		echo "Error: SERVICE and TAG are required."; \
+		echo "Usage: make version-pull SERVICE=outpost TAG=1.42"; \
+		echo ""; \
+		echo "Available services:"; \
+		echo "  make version-pull SERVICE=outpost TAG=1.42"; \
+		echo "  make version-pull SERVICE=cmd_exec TAG=1.15"; \
+		echo "  make version-pull SERVICE=vault TAG=1.15.0"; \
+		exit 1; \
+	fi
+	@python3 version-manager.py pull --service=$(SERVICE) --tag=$(TAG)
+
+# Set custom version for hotfixes
+# Usage: make version-set SERVICE=outpost TAG=1.42-hotfix
+version-set:
+	@if [ -z "$(SERVICE)" ] || [ -z "$(TAG)" ]; then \
+		echo "Error: SERVICE and TAG are required."; \
+		echo "Usage: make version-set SERVICE=outpost TAG=1.42-hotfix"; \
+		exit 1; \
+	fi
+	@python3 version-manager.py set --service=$(SERVICE) --tag=$(TAG)
+
+# Rollback all services to previous version
+rollback:
+	@python3 version-manager.py rollback --all
+
+# Rollback specific service
+# Usage: make rollback-service SERVICE=outpost
+rollback-service:
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Error: SERVICE is required. Usage: make rollback-service SERVICE=outpost"; \
+		exit 1; \
+	fi
+	@python3 version-manager.py rollback --service=$(SERVICE)
+
+# Rollback to specific tag
+# Usage: make rollback-to SERVICE=outpost TAG=1.41
+rollback-to:
+	@if [ -z "$(SERVICE)" ] || [ -z "$(TAG)" ]; then \
+		echo "Error: SERVICE and TAG are required."; \
+		echo "Usage: make rollback-to SERVICE=outpost TAG=1.41"; \
+		exit 1; \
+	fi
+	@python3 version-manager.py rollback --service=$(SERVICE) --tag=$(TAG)
+
+# Safe update to latest with automatic backup
+update-safe:
+	@python3 version-manager.py update-safe
+
+# Check for available updates
+check-updates:
+	@python3 version-manager.py check-updates
+
+# Resolve :latest tags to semantic versions
+resolve-tags:
+	@python3 version-manager.py resolve-tags
+
+# Migrate existing deployment to versioned
+migrate-versions:
+	@python3 migrate-to-versioned.py
+
+# Generate versions.env from manifest
+generate-env:
+	@python3 version-manager.py generate-env
+
+# Friendly aliases
+upgrade: update-safe
+downgrade: rollback
+whatversion: version
+
+# Version management help
+help-version:
+	@echo "DagKnows Proxy Version Management"
+	@echo "=================================="
+	@echo ""
+	@echo "NOTE: Each service has its own version"
+	@echo "  - outpost: Proxy orchestration service (ECR)"
+	@echo "  - cmd_exec: Command execution service (ECR)"
+	@echo "  - vault: HashiCorp Vault (Docker Hub)"
+	@echo ""
+	@echo "View Versions:"
+	@echo "  make version                         - Show current versions"
+	@echo "  make version-history                 - Show history for all"
+	@echo "  make version-history SERVICE=x       - Show history for service"
+	@echo ""
+	@echo "Update:"
+	@echo "  make pull                            - Pull latest for all"
+	@echo "  make update-safe                     - Safe update with backup"
+	@echo "  make version-pull SERVICE=x TAG=y    - Pull specific version"
+	@echo "  make version-set SERVICE=x TAG=y     - Set custom version (hotfix)"
+	@echo "  make check-updates                   - Check for updates"
+	@echo ""
+	@echo "Rollback:"
+	@echo "  make rollback                        - Rollback all to previous"
+	@echo "  make rollback-service SERVICE=x      - Rollback specific service"
+	@echo "  make rollback-to SERVICE=x TAG=y     - Rollback to specific version"
+	@echo ""
+	@echo "Migration:"
+	@echo "  make migrate-versions                - Enable version tracking"
+	@echo "  make generate-env                    - Regenerate versions.env"
+	@echo "  make resolve-tags                    - Resolve :latest to versions"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make version-pull SERVICE=outpost TAG=1.42"
+	@echo "  make version-set SERVICE=cmd_exec TAG=1.15-hotfix"
+	@echo "  make rollback-service SERVICE=outpost"
+	@echo ""
+	@echo "Aliases:"
+	@echo "  make upgrade      = make update-safe"
+	@echo "  make downgrade    = make rollback"
+	@echo "  make whatversion  = make version"
