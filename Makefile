@@ -203,7 +203,7 @@ help:
 .PHONY: start stop restart setup-autorestart disable-autorestart autorestart-status
 
 # Smart start: uses systemctl if auto-restart configured, otherwise traditional method
-start: logdirs
+start: stop logdirs
 	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
 		echo "Starting services via systemd (auto-restart mode)..."; \
 		sudo systemctl start dkproxy.service; \
