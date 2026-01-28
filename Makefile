@@ -10,6 +10,7 @@ logs:
 # Log Management - Capture and filter logs
 logdirs:
 	@mkdir -p $(LOG_DIR)
+	@sudo chown -R $$(id -u):$$(id -g) $(LOG_DIR) 2>/dev/null || true
 
 logs-start: logdirs
 	@if [ -f $(LOG_PID_FILE) ] && kill -0 $$(cat $(LOG_PID_FILE)) 2>/dev/null; then \
@@ -36,10 +37,19 @@ logs-errors:
 	@grep -i "error\|exception\|fail" $(LOG_DIR)/*.log 2>/dev/null || echo "No errors found in captured logs"
 
 logs-service:
-	@grep "^$(SERVICE)" $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>/dev/null || echo "No logs for $(SERVICE). Try: make logs-service SERVICE=outpost"
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Usage: make logs-service SERVICE=<service-name>"; \
+		echo "Example: make logs-service SERVICE=outpost"; \
+	else \
+		grep "^$(SERVICE)" $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>/dev/null || echo "No logs for $(SERVICE)."; \
+	fi
 
 logs-search:
-	@grep -i "$(PATTERN)" $(LOG_DIR)/*.log 2>/dev/null || echo "Pattern '$(PATTERN)' not found"
+	@if [ -z "$(PATTERN)" ]; then \
+		echo "Usage: make logs-search PATTERN='text'"; \
+	else \
+		grep -i "$(PATTERN)" $(LOG_DIR)/*.log 2>/dev/null || echo "Pattern '$(PATTERN)' not found"; \
+	fi
 
 logs-rotate:
 	@find $(LOG_DIR) -name "*.log" -mtime +3 -exec gzip {} \; 2>/dev/null || true
@@ -98,7 +108,7 @@ up: down ensureitems logdirs
 		docker compose up -d; \
 	fi
 	@echo "Starting background log capture..."
-	@nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & echo $$! > $(LOG_PID_FILE)
+	@$(MAKE) logs-start
 
 download:
 	sudo rm -Rf main.zip proxy.tar.bz2 dkproxy-main
@@ -154,7 +164,8 @@ help:
 	@echo "  make status       - Check proxy status and versions"
 	@echo "  make build        - Build Docker images"
 	@echo "  make update       - Update to latest version"
-	@echo "  make pull         - Pull latest Docker images"
+	@echo "  make pull         - Pull images from manifest (or latest)"
+	@echo "  make pull-latest  - Pull latest images (updates manifest)"
 	@echo ""
 	@echo "Monitoring:"
 	@echo "  make logs         - View live logs (last 300 lines + follow)"
@@ -175,6 +186,108 @@ help:
 	@echo "Version Management:"
 	@echo "  make version           - Show current versions"
 	@echo "  make help-version      - Show all version management commands"
+	@echo ""
+	@echo "Service Control (Recommended):"
+	@echo "  make start        - Start all services (with log capture)"
+	@echo "  make stop         - Stop all services and log capture"
+	@echo "  make restart      - Restart all services"
+	@echo ""
+	@echo "Auto-Restart (System Boot):"
+	@echo "  make setup-autorestart   - Setup auto-start on system reboot"
+	@echo "  make disable-autorestart - Disable auto-start"
+	@echo "  make autorestart-status  - Check auto-restart configuration"
+
+# ==============================================
+# SMART START/STOP/RESTART (Auto-detects mode)
+# ==============================================
+
+.PHONY: start stop restart setup-autorestart disable-autorestart autorestart-status
+
+# Smart start: uses systemctl if auto-restart configured, otherwise traditional method
+start: stop logdirs
+	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
+		echo "Starting services via systemd (auto-restart mode)..."; \
+		sudo systemctl start dkproxy.service; \
+		$(MAKE) logs-start; \
+		echo "Done. Use 'make status' to check."; \
+	else \
+		echo "Starting services..."; \
+		docker network create saaslocalnetwork 2>/dev/null || true; \
+		if [ -f "version-manifest.yaml" ]; then \
+			python3 version-manager.py generate-env 2>/dev/null || true; \
+		fi; \
+		if [ -f "versions.env" ]; then \
+			set -a && . ./versions.env && set +a && \
+			docker compose up -d; \
+		else \
+			docker compose up -d; \
+		fi; \
+		sleep 3; \
+		$(MAKE) logs-start; \
+		echo "Services started."; \
+	fi
+
+# Smart stop: stops all services and log capture
+stop: logs-stop
+	@echo "Stopping all services..."
+	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
+		sudo systemctl stop dkproxy.service 2>/dev/null || true; \
+	fi
+	@docker compose down 2>/dev/null || true
+	@echo "All services stopped."
+
+# Smart restart
+restart: stop start
+
+# ==============================================
+# AUTO-RESTART CONFIGURATION
+# ==============================================
+
+setup-autorestart:
+	@echo "Setting up auto-restart on system reboot..."
+	@if [ ! -f dkproxy.service ]; then \
+		echo "ERROR: dkproxy.service not found"; \
+		exit 1; \
+	fi
+	@if [ ! -f dkproxy-startup.sh ]; then \
+		echo "ERROR: dkproxy-startup.sh not found"; \
+		exit 1; \
+	fi
+	@INSTALL_DIR=$$(pwd) && \
+	sudo cp dkproxy.service /etc/systemd/system/dkproxy.service && \
+	sudo sed -i "s|/opt/dkproxy|$$INSTALL_DIR|g" /etc/systemd/system/dkproxy.service && \
+	sudo chmod +x $$INSTALL_DIR/dkproxy-startup.sh && \
+	sudo sed -i "s|DKPROXY_DIR:-/opt/dkproxy|DKPROXY_DIR:-$$INSTALL_DIR|g" $$INSTALL_DIR/dkproxy-startup.sh && \
+	sudo systemctl daemon-reload && \
+	sudo systemctl enable dkproxy.service && \
+	echo "" && \
+	echo "Auto-restart configured successfully!" && \
+	echo "  - Services will start automatically on system boot" && \
+	echo "  - Log capture will start automatically" && \
+	echo "" && \
+	echo "Commands:" && \
+	echo "  make start   - Start services now" && \
+	echo "  make stop    - Stop services" && \
+	echo "  make status  - Check status"
+
+disable-autorestart:
+	@echo "Disabling auto-restart..."
+	@sudo systemctl stop dkproxy.service 2>/dev/null || true
+	@sudo systemctl disable dkproxy.service 2>/dev/null || true
+	@sudo rm -f /etc/systemd/system/dkproxy.service
+	@sudo systemctl daemon-reload
+	@echo "Auto-restart disabled."
+
+autorestart-status:
+	@echo "=== Auto-Restart Status ==="
+	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
+		echo "Systemd service: INSTALLED"; \
+		systemctl is-enabled dkproxy.service 2>/dev/null && echo "Service enabled: YES" || echo "Service enabled: NO"; \
+		systemctl is-active dkproxy.service 2>/dev/null && echo "Service active: YES" || echo "Service active: NO"; \
+	else \
+		echo "Systemd service: NOT INSTALLED"; \
+		echo "Run 'make setup-autorestart' to enable"; \
+	fi
 
 # ============================================
 # VERSION MANAGEMENT
