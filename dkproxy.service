@@ -1,0 +1,20 @@
+[Unit]
+Description=DagKnows Proxy Services
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/dkproxy
+Environment=DKPROXY_DIR=/opt/dkproxy
+# Use - prefix to ignore failure if network already exists
+ExecStartPre=-/usr/bin/docker network create saaslocalnetwork
+ExecStart=/opt/dkproxy/dkproxy-startup.sh
+ExecStop=/usr/bin/docker compose -f /opt/dkproxy/docker-compose.yaml down
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
