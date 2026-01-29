@@ -108,6 +108,7 @@ up: down ensureitems logdirs
 		docker compose up -d; \
 	fi
 	@echo "Starting background log capture..."
+	@sleep 3
 	@$(MAKE) logs-start
 
 download:
@@ -213,6 +214,7 @@ start: stop logdirs
 	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
 		echo "Starting services via systemd (auto-restart mode)..."; \
 		sudo systemctl start dkproxy.service; \
+		sleep 3; \
 		$(MAKE) logs-start; \
 		echo "Done. Use 'make status' to check."; \
 	else \
