@@ -6,7 +6,11 @@ set -e
 
 # Configuration - these are set during setup-autorestart installation
 DKPROXY_DIR="${DKPROXY_DIR:-/opt/dkproxy}"
-LOG_FILE="/var/log/dkproxy-startup.log"
+
+# Derive unique log file name from parent directory
+# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> /var/log/dkproxy-startup-freshproxy.log
+PARENT_DIR=$(basename "$(dirname "$DKPROXY_DIR")")
+LOG_FILE="/var/log/dkproxy-startup-${PARENT_DIR}.log"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"

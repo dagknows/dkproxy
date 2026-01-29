@@ -17,6 +17,12 @@ trap 'echo ""; echo -e "\033[0;31m✗ ERROR: Setup interrupted by user\033[0m"; 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="${DKPROXY_INSTALL_DIR:-$SCRIPT_DIR}"
 
+# Derive unique service name from parent directory
+# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
+PARENT_DIR=$(basename "$(dirname "$INSTALL_DIR")")
+SERVICE_NAME="dkproxy-${PARENT_DIR}.service"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -60,6 +66,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 print_info "Installation directory: $INSTALL_DIR"
+print_info "Service name: $SERVICE_NAME"
 echo ""
 
 # Check prerequisites
@@ -141,13 +148,16 @@ print_success "Startup script configured"
 # Install systemd service file
 print_info "Installing systemd service file..."
 
-# Copy service file to systemd directory
-cp "$INSTALL_DIR/dkproxy.service" /etc/systemd/system/dkproxy.service
+# Copy service file to systemd directory with unique name
+cp "$INSTALL_DIR/dkproxy.service" "$SERVICE_FILE"
 
 # Update paths in service file
-sed -i "s|/opt/dkproxy|$INSTALL_DIR|g" /etc/systemd/system/dkproxy.service
+sed -i "s|/opt/dkproxy|$INSTALL_DIR|g" "$SERVICE_FILE"
 
-print_success "Systemd service file installed"
+# Update description to include the identifier
+sed -i "s|DagKnows Proxy Services|DagKnows Proxy Services ($PARENT_DIR)|g" "$SERVICE_FILE"
+
+print_success "Systemd service file installed: $SERVICE_NAME"
 
 # Reload systemd daemon
 print_info "Reloading systemd daemon..."
@@ -155,8 +165,8 @@ systemctl daemon-reload
 print_success "Systemd daemon reloaded"
 
 # Enable the service
-print_info "Enabling dkproxy.service..."
-systemctl enable dkproxy.service
+print_info "Enabling $SERVICE_NAME..."
+systemctl enable "$SERVICE_NAME"
 print_success "Service enabled for automatic startup"
 
 print_header "Auto-Restart Setup Complete"
@@ -175,19 +185,19 @@ echo -e "  ${BLUE}make autorestart-status${NC} - Check auto-restart status"
 echo ""
 
 echo -e "${BOLD}Systemd Commands (alternative):${NC}"
-echo -e "  ${BLUE}sudo systemctl start dkproxy${NC}    - Start services"
-echo -e "  ${BLUE}sudo systemctl stop dkproxy${NC}     - Stop services"
-echo -e "  ${BLUE}sudo systemctl status dkproxy${NC}   - Check status"
+echo -e "  ${BLUE}sudo systemctl start $SERVICE_NAME${NC}   - Start services"
+echo -e "  ${BLUE}sudo systemctl stop $SERVICE_NAME${NC}    - Stop services"
+echo -e "  ${BLUE}sudo systemctl status $SERVICE_NAME${NC}  - Check status"
 echo ""
 
 echo -e "${BOLD}View Logs:${NC}"
-echo -e "  ${BLUE}make logs${NC}                       - View live container logs"
-echo -e "  ${BLUE}cat /var/log/dkproxy-startup.log${NC} - View startup log"
+echo -e "  ${BLUE}make logs${NC}                              - View live container logs"
+echo -e "  ${BLUE}cat /var/log/dkproxy-startup-${PARENT_DIR}.log${NC} - View startup log"
 echo ""
 
 echo -e "${BOLD}To Disable Auto-Restart:${NC}"
 echo -e "  ${BLUE}make disable-autorestart${NC}"
-echo "  or: sudo systemctl disable dkproxy.service"
+echo "  or: sudo systemctl disable $SERVICE_NAME"
 echo ""
 
 # Offer to start services now
@@ -198,13 +208,13 @@ start_now=${start_now:-Y}
 if [[ "$start_now" =~ ^[Yy] ]]; then
     echo ""
     print_info "Starting proxy services..."
-    if systemctl start dkproxy.service; then
+    if systemctl start "$SERVICE_NAME"; then
         print_success "Proxy services started successfully!"
         echo ""
         echo "View logs with: make logs"
     else
         print_error "Failed to start services"
-        echo "Check logs with: journalctl -u dkproxy.service"
+        echo "Check logs with: journalctl -u $SERVICE_NAME"
     fi
 else
     echo ""

@@ -2,6 +2,12 @@
 LOG_DIR=./logs
 LOG_PID_FILE=./logs/.capture.pid
 
+# Derive unique service name from parent directory
+# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
+PARENT_DIR := $(notdir $(patsubst %/,%,$(dir $(CURDIR))))
+SERVICE_NAME := dkproxy-$(PARENT_DIR).service
+SERVICE_FILE := /etc/systemd/system/$(SERVICE_NAME)
+
 .PHONY: logs logs-start logs-stop logs-today logs-errors logs-service logs-search logs-rotate logs-status logs-clean logs-cron-install logs-cron-remove logdirs
 
 logs:
@@ -211,9 +217,9 @@ help:
 
 # Smart start: uses systemctl if auto-restart configured, otherwise traditional method
 start: stop logdirs
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
-		echo "Starting services via systemd (auto-restart mode)..."; \
-		sudo systemctl start dkproxy.service; \
+	@if [ -f $(SERVICE_FILE) ]; then \
+		echo "Starting services via systemd ($(SERVICE_NAME))..."; \
+		sudo systemctl start $(SERVICE_NAME); \
 		sleep 3; \
 		$(MAKE) logs-start; \
 		echo "Done. Use 'make status' to check."; \
@@ -237,8 +243,8 @@ start: stop logdirs
 # Smart stop: stops all services and log capture
 stop: logs-stop
 	@echo "Stopping all services..."
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
-		sudo systemctl stop dkproxy.service 2>/dev/null || true; \
+	@if [ -f $(SERVICE_FILE) ]; then \
+		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
 	@docker compose down 2>/dev/null || true
 	@echo "All services stopped."
@@ -255,19 +261,20 @@ setup-autorestart:
 	@sudo bash setup-autorestart.sh
 
 disable-autorestart:
-	@echo "Disabling auto-restart..."
-	@sudo systemctl stop dkproxy.service 2>/dev/null || true
-	@sudo systemctl disable dkproxy.service 2>/dev/null || true
-	@sudo rm -f /etc/systemd/system/dkproxy.service
+	@echo "Disabling auto-restart for $(SERVICE_NAME)..."
+	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true
+	@sudo systemctl disable $(SERVICE_NAME) 2>/dev/null || true
+	@sudo rm -f $(SERVICE_FILE)
 	@sudo systemctl daemon-reload
 	@echo "Auto-restart disabled."
 
 autorestart-status:
 	@echo "=== Auto-Restart Status ==="
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
+	@echo "Service name: $(SERVICE_NAME)"
+	@if [ -f $(SERVICE_FILE) ]; then \
 		echo "Systemd service: INSTALLED"; \
-		systemctl is-enabled dkproxy.service 2>/dev/null && echo "Service enabled: YES" || echo "Service enabled: NO"; \
-		systemctl is-active dkproxy.service 2>/dev/null && echo "Service active: YES" || echo "Service active: NO"; \
+		systemctl is-enabled $(SERVICE_NAME) 2>/dev/null && echo "Service enabled: YES" || echo "Service enabled: NO"; \
+		systemctl is-active $(SERVICE_NAME) 2>/dev/null && echo "Service active: YES" || echo "Service active: NO"; \
 	else \
 		echo "Systemd service: NOT INSTALLED"; \
 		echo "Run 'make setup-autorestart' to enable"; \

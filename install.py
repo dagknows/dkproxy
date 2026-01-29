@@ -106,6 +106,17 @@ def offer_log_rotation_setup():
         print_info("You can try later with: make logs-cron-install")
         return False
 
+def get_service_name():
+    """Get the unique service name based on parent directory"""
+    # e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
+    current_dir = os.path.abspath(os.getcwd())
+    parent_dir = os.path.basename(os.path.dirname(current_dir))
+    return f"dkproxy-{parent_dir}.service"
+
+def get_service_file():
+    """Get the path to this installation's systemd service file"""
+    return f"/etc/systemd/system/{get_service_name()}"
+
 def offer_autorestart_setup():
     """Offer to set up auto-restart after proxy is running"""
     print()
@@ -114,9 +125,10 @@ def offer_autorestart_setup():
     print_warning("Note: This requires sudo privileges")
     print()
 
-    # Check if already configured
-    if os.path.exists('/etc/systemd/system/dkproxy.service'):
-        print_success("Auto-restart is already configured")
+    # Check if already configured (check for this installation's unique service file)
+    service_file = get_service_file()
+    if os.path.exists(service_file):
+        print_success(f"Auto-restart is already configured ({get_service_name()})")
         return True
 
     response = input(f"{Colors.BOLD}Set up auto-restart on system boot? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
