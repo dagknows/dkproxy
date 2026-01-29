@@ -125,7 +125,7 @@ down: logs-stop
 	docker compose down --remove-orphans
 
 update: down pull build
-	echo "Proxy updated.  Bring it up with make up logs"
+	echo "Proxy updated.  Start it with: make start"
 
 up: down ensureitems logdirs
 	@# Generate versions.env from manifest if it exists

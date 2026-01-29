@@ -478,7 +478,7 @@ class VersionManager:
             self.update_service_version(service, tag)
             self.save_manifest()
             self.generate_env()
-            print_info("Run 'make down && make up' to apply changes")
+            print_info("Run 'make restart' to apply changes")
         else:
             print_error(f"Failed to pull {service}:{tag}")
             if output:
@@ -567,7 +567,7 @@ class VersionManager:
             print_info("Configure AWS CLI for tag resolution, or run: make resolve-tags")
 
         print()
-        print_info("Run 'make down && make up' to apply changes")
+        print_info("Run 'make restart' to apply changes")
         return True
 
     # ==================
@@ -639,7 +639,7 @@ class VersionManager:
             self.save_manifest()
             self.generate_env()
             print_success(f"\nRolled back {success_count} service(s)")
-            print_info("Run 'make up' to apply changes")
+            print_info("Run 'make start' to apply changes")
             return True
         else:
             print_error("Rollback failed")
@@ -688,7 +688,7 @@ class VersionManager:
         self.generate_env()
 
         print_success(f"Set {service} to {tag}")
-        print_info("Run 'make up' to apply changes")
+        print_info("Run 'make start' to apply changes")
         return True
 
     def update_safe(self):
@@ -747,12 +747,12 @@ class VersionManager:
 
         # Step 5: Stop services
         print_info("Stopping services...")
-        run_command("docker compose down")
+        run_command("make stop")
         print_success("Services stopped")
 
         # Step 6: Start services
         print_info("Starting services with new images...")
-        success, _ = run_command("make up", capture=False)
+        success, _ = run_command("make start", capture=False)
         if not success:
             print_error("Failed to start services")
             return False

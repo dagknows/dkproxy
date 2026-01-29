@@ -84,7 +84,7 @@ def check_containers():
 
     if result.returncode != 0 or not result.stdout.strip():
         print(f"  {Colors.FAIL}No containers running{Colors.ENDC}")
-        print(f"  Run: make up")
+        print(f"  Run: make start")
         return False
 
     # Load versions
