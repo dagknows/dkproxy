@@ -207,7 +207,13 @@ start_now=${start_now:-Y}
 
 if [[ "$start_now" =~ ^[Yy] ]]; then
     echo ""
-    print_info "Starting proxy services..."
+    # First stop any services started via docker compose directly
+    print_info "Stopping any existing docker compose services..."
+    cd "$INSTALL_DIR"
+    docker compose down 2>/dev/null || true
+
+    # Now start via systemd
+    print_info "Starting proxy services via systemd..."
     if systemctl start "$SERVICE_NAME"; then
         print_success "Proxy services started successfully!"
         echo ""
