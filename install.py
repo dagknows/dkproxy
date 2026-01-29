@@ -192,6 +192,13 @@ def offer_versioning_setup():
     try:
         if run_command("make migrate-versions", check=False):
             print_success("Version management configured!")
+            # Restart proxy to apply versions.env
+            print_info("Restarting proxy to apply version configuration...")
+            if run_command("make start", check=False):
+                print_success("Proxy restarted with version tracking enabled")
+            else:
+                print_warning("Could not restart proxy automatically")
+                print_info("Run 'make start' to apply version configuration")
             return True
         else:
             print_warning("Failed to set up version management")
