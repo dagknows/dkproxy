@@ -139,6 +139,41 @@ def offer_autorestart_setup():
         print_info("You can try later with: make setup-autorestart")
         return False
 
+def offer_versioning_setup():
+    """Offer to set up version tracking after proxy is running"""
+    print()
+    print(f"{Colors.BOLD}Version Management Setup{Colors.ENDC}")
+    print_info("Version management pins Docker images to specific versions:")
+    print("  - Reproducible deployments with pinned versions")
+    print("  - Easy rollback if an update causes issues")
+    print("  - Track version history over time")
+    print()
+
+    # Check if already configured
+    if os.path.exists('version-manifest.yaml'):
+        print_success("Version management is already configured")
+        return True
+
+    response = input(f"{Colors.BOLD}Set up version management? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
+    if response in ['no', 'n']:
+        print_info("Skipping version management setup")
+        print_info("You can set it up later with: make setup-versioning")
+        return False
+
+    print_info("Setting up version management...")
+    try:
+        if run_command("make migrate-versions", check=False):
+            print_success("Version management configured!")
+            return True
+        else:
+            print_warning("Failed to set up version management")
+            print_info("You can try later with: make setup-versioning")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up version management: {e}")
+        print_info("You can try later with: make setup-versioning")
+        return False
+
 def check_pip_available():
     """Check if pip3 is available"""
     return shutil.which('pip3') is not None or shutil.which('pip') is not None
@@ -769,8 +804,8 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
 
     print(f"{Colors.BOLD}Optional Setup Commands:{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}make setup-autorestart{Colors.ENDC}   - Auto-start on system reboot")
-    print(f"  {Colors.OKBLUE}make logs-cron-install{Colors.ENDC}   - Daily log rotation")
-    print(f"  {Colors.OKBLUE}make migrate-versions{Colors.ENDC}    - Enable version tracking")
+    print(f"  {Colors.OKBLUE}make setup-log-rotation{Colors.ENDC}  - Daily log rotation")
+    print(f"  {Colors.OKBLUE}make setup-versioning{Colors.ENDC}    - Enable version tracking")
     print()
 
     print(f"{Colors.BOLD}DagKnows CLI commands (activate venv first):{Colors.ENDC}")
@@ -954,8 +989,11 @@ def main():
             # Offer log rotation setup (default yes, recommended)
             offer_log_rotation_setup()
 
-            # Offer auto-restart setup (default no, requires sudo)
+            # Offer auto-restart setup (default yes, requires sudo)
             offer_autorestart_setup()
+
+            # Offer version management setup (default yes, pins current image versions)
+            offer_versioning_setup()
 
         # Show final instructions (even if proxy didn't start, so user knows what to do)
         print_final_instructions(proxy_name, use_sg, proxy_started)
