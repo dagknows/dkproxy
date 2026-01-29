@@ -28,8 +28,17 @@ logs-start: logdirs
 	else \
 		echo "Starting background log capture to $(LOG_DIR)/$$(date +%Y-%m-%d).log"; \
 		nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
-		echo $$! > $(LOG_PID_FILE); \
-		echo "Log capture started (PID: $$!)"; \
+		PID=$$!; \
+		echo $$PID > $(LOG_PID_FILE); \
+		sleep 1; \
+		if kill -0 $$PID 2>/dev/null; then \
+			echo "Log capture started (PID: $$PID)"; \
+		else \
+			echo "Warning: Log capture process exited immediately"; \
+			echo "  This may happen if no containers are running yet."; \
+			echo "  Logs will be captured on next 'make start'."; \
+			rm -f $(LOG_PID_FILE); \
+		fi; \
 	fi
 
 logs-stop:
@@ -237,7 +246,8 @@ start: stop logdirs
 	@if [ -f $(SERVICE_FILE) ]; then \
 		echo "Starting services via systemd ($(SERVICE_NAME))..."; \
 		sudo systemctl start $(SERVICE_NAME); \
-		sleep 3; \
+		echo "Waiting for containers to initialize..."; \
+		sleep 5; \
 		$(MAKE) logs-start; \
 		echo "Done. Use 'make status' to check."; \
 	else \
@@ -252,7 +262,8 @@ start: stop logdirs
 		else \
 			docker compose up -d; \
 		fi; \
-		sleep 3; \
+		echo "Waiting for containers to initialize..."; \
+		sleep 5; \
 		$(MAKE) logs-start; \
 		echo "Services started."; \
 	fi
