@@ -77,11 +77,12 @@ def offer_log_rotation_setup():
     print("  - Runs daily at midnight via cron")
     print()
 
-    # Check if already configured
+    # Check if already configured for THIS proxy (using PROXY_ALIAS tag)
     try:
-        result = run_command("crontab -l 2>/dev/null | grep -q 'dkproxy.*logs-rotate'", check=False)
+        proxy_alias = get_proxy_alias()
+        result = run_command(f"crontab -l 2>/dev/null | grep -q '# dkproxy:{proxy_alias}'", check=False)
         if result:
-            print_success("Log rotation cron job is already installed")
+            print_success(f"Log rotation cron job is already installed for {proxy_alias}")
             return True
     except Exception:
         pass

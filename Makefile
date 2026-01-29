@@ -78,14 +78,14 @@ logs-clean:
 
 logs-cron-install:
 	@DKPROXY_DIR=$$(pwd) && \
-	(crontab -l 2>/dev/null | grep -v "dkproxy.*logs-rotate"; \
-	echo "0 0 * * * cd $$DKPROXY_DIR && make logs-rotate >> $$DKPROXY_DIR/logs/cron.log 2>&1") | crontab - && \
-	echo "Cron job installed: daily log rotation at midnight" && \
+	(crontab -l 2>/dev/null | grep -v "# dkproxy:$(PROXY_ALIAS)"; \
+	echo "0 0 * * * cd $$DKPROXY_DIR && make logs-rotate >> $$DKPROXY_DIR/logs/cron.log 2>&1 # dkproxy:$(PROXY_ALIAS)") | crontab - && \
+	echo "Cron job installed for $(PROXY_ALIAS): daily log rotation at midnight" && \
 	echo "View with: crontab -l"
 
 logs-cron-remove:
-	@crontab -l 2>/dev/null | grep -v "dkproxy.*logs-rotate" | crontab - && \
-	echo "Cron job removed"
+	@crontab -l 2>/dev/null | grep -v "# dkproxy:$(PROXY_ALIAS)" | crontab - && \
+	echo "Cron job removed for $(PROXY_ALIAS)"
 
 prepare:
 	echo "Adding the repository to Apt sources..."

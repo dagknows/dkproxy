@@ -19,6 +19,15 @@ trap 'echo ""; echo -e "\033[0;31m✗ ERROR: Setup interrupted by user\033[0m"; 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Read PROXY_ALIAS from .env for unique cron job identification
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    PROXY_ALIAS=$(grep -E "^PROXY_ALIAS=" "$SCRIPT_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || true)
+fi
+if [ -z "$PROXY_ALIAS" ]; then
+    # Fallback to parent directory if no PROXY_ALIAS
+    PROXY_ALIAS=$(basename "$(dirname "$SCRIPT_DIR")")
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -69,9 +78,9 @@ if ! command -v crontab &> /dev/null; then
     exit 1
 fi
 
-# Check if cron job already exists
-if crontab -l 2>/dev/null | grep -q "dkproxy.*logs-rotate"; then
-    print_header "Log Rotation Already Configured"
+# Check if cron job already exists for THIS proxy (using PROXY_ALIAS tag)
+if crontab -l 2>/dev/null | grep -q "# dkproxy:$PROXY_ALIAS"; then
+    print_header "Log Rotation Already Configured for $PROXY_ALIAS"
 
     print_success "Cron job for log rotation is already installed!"
     echo ""
@@ -98,9 +107,9 @@ if crontab -l 2>/dev/null | grep -q "dkproxy.*logs-rotate"; then
         exit 0
     fi
 
-    # Remove existing cron job
-    print_info "Removing existing cron job..."
-    crontab -l 2>/dev/null | grep -v "dkproxy.*logs-rotate" | crontab -
+    # Remove existing cron job for THIS proxy only
+    print_info "Removing existing cron job for $PROXY_ALIAS..."
+    crontab -l 2>/dev/null | grep -v "# dkproxy:$PROXY_ALIAS" | crontab -
     print_success "Existing cron job removed"
     echo ""
 fi
