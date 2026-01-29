@@ -3,7 +3,7 @@
 # Migrates existing deployment to use versioned image management
 #
 # Usage:
-#   bash setup-versioning.sh
+#   make setup-versioning
 #
 # This script sets up version tracking for Docker images, enabling:
 # - Pinned versions for reproducible deployments

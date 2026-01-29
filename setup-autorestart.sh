@@ -3,7 +3,7 @@
 # Configures systemd service for automatic startup on system boot
 #
 # Usage:
-#   sudo bash setup-autorestart.sh
+#   make setup-autorestart
 #
 # This script sets up systemd to automatically start the proxy services
 # when the system boots. Unlike dkapp, dkproxy uses an unencrypted .env

@@ -196,11 +196,8 @@ help:
 	@echo "  make setup-autorestart   - Setup auto-start on system reboot"
 	@echo "  make disable-autorestart - Disable auto-start"
 	@echo "  make autorestart-status  - Check auto-restart configuration"
-	@echo ""
-	@echo "Standalone Setup Scripts (for partial upgrades):"
-	@echo "  bash setup-autorestart.sh   - Setup auto-start (interactive)"
-	@echo "  bash setup-log-rotation.sh  - Setup log rotation (interactive)"
-	@echo "  bash setup-versioning.sh    - Setup version tracking (interactive)"
+	@echo "  make setup-log-rotation  - Setup daily log rotation"
+	@echo "  make setup-versioning    - Setup version tracking"
 
 # ==============================================
 # SMART START/STOP/RESTART (Auto-detects mode)

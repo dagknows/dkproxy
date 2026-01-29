@@ -3,7 +3,7 @@
 # Installs a cron job for automatic log rotation
 #
 # Usage:
-#   bash setup-log-rotation.sh
+#   make setup-log-rotation
 #
 # Log rotation policy:
 #   - 0-3 days: uncompressed (.log)
