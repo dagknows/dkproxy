@@ -677,20 +677,21 @@ def start_proxy(use_sg=False):
         print_info("  4. cat .env (verify it has content)")
         return False
     
-    print_info("Running 'make up logs'...")
-    print_info("This will start the proxy containers and show logs")
-    print_info("Press Ctrl+C to stop viewing logs (proxy will keep running)")
+    print_info("Running 'make up'...")
+    print_info("This will start the proxy containers")
     print()
-    
-    # Use sg docker if needed
+
+    # Use sg docker if needed - run 'make up' only (not logs, which blocks forever)
     if use_sg:
-        cmd = "sg docker -c 'make up logs'"
+        cmd = "sg docker -c 'make up'"
     else:
-        cmd = "make up logs"
-    
+        cmd = "make up"
+
     try:
         subprocess.run(cmd, shell=True, check=True)
         print_success("Proxy services started successfully")
+        print()
+        print_info("View logs anytime with: make logs")
         return True
     except subprocess.CalledProcessError:
         print_error("Failed to start proxy services")
@@ -699,12 +700,11 @@ def start_proxy(use_sg=False):
         print_info("  1. Check .env file has all required variables")
         print_info("  2. Verify proxy was created: source ~/dkenv/bin/activate && dk proxy list")
         print_info("  3. Regenerate env: dk proxy getenv <proxy_name>")
-        print_info("  4. Try manually: make up logs")
+        print_info("  4. Try manually: make up")
         return False
     except KeyboardInterrupt:
-        print_info("\nLogs stopped by user")
-        print_success("Proxy is running in the background")
-        return True
+        print_info("\nStartup interrupted by user")
+        return False
 
 def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     """Print final success message and instructions"""
@@ -734,7 +734,8 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
         else:
             print(f"  3. Get environment variables: {Colors.OKCYAN}dk proxy getenv <proxy_name>{Colors.ENDC}")
         print(f"  4. Verify .env file has content: {Colors.OKCYAN}cat .env{Colors.ENDC}")
-        print(f"  5. Start proxy: {Colors.OKCYAN}make up logs{Colors.ENDC}")
+        print(f"  5. Start proxy: {Colors.OKCYAN}make up{Colors.ENDC}")
+        print(f"  6. View logs: {Colors.OKCYAN}make logs{Colors.ENDC}")
         print()
     
     if used_sg:
