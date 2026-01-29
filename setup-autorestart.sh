@@ -214,18 +214,17 @@ start_now=${start_now:-Y}
 
 if [[ "$start_now" =~ ^[Yy] ]]; then
     echo ""
-    # First stop any services started via docker compose directly
-    print_info "Stopping any existing docker compose services..."
+    # Use make start which handles everything properly:
+    # - Stops existing services
+    # - Loads versions.env if present
+    # - Starts via systemd (since we just installed it)
+    # - Starts log capture
+    print_info "Starting proxy services..."
     cd "$INSTALL_DIR"
-    docker compose down 2>/dev/null || true
-
-    # Now start via systemd
-    print_info "Starting proxy services via systemd..."
-    if systemctl start "$SERVICE_NAME"; then
+    if make start; then
         print_success "Proxy services started successfully!"
 
-        # Wait a moment and verify log capture started
-        sleep 2
+        # Verify log capture is running
         LOG_PID_FILE="$INSTALL_DIR/logs/.capture.pid"
         if [ -f "$LOG_PID_FILE" ] && kill -0 $(cat "$LOG_PID_FILE") 2>/dev/null; then
             print_success "Background log capture running (PID: $(cat "$LOG_PID_FILE"))"
