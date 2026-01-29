@@ -740,15 +740,15 @@ def start_proxy(use_sg=False):
         print_info("  4. cat .env (verify it has content)")
         return False
     
-    print_info("Running 'make up'...")
+    print_info("Running 'make start'...")
     print_info("This will start the proxy containers")
     print()
 
-    # Use sg docker if needed - run 'make up' only (not logs, which blocks forever)
+    # Use sg docker if needed - run 'make start' only (not logs, which blocks forever)
     if use_sg:
-        cmd = "sg docker -c 'make up'"
+        cmd = "sg docker -c 'make start'"
     else:
-        cmd = "make up"
+        cmd = "make start"
 
     try:
         subprocess.run(cmd, shell=True, check=True)
@@ -769,7 +769,7 @@ def start_proxy(use_sg=False):
         print_info("  1. Check .env file has all required variables")
         print_info("  2. Verify proxy was created: source ~/dkenv/bin/activate && dk proxy list")
         print_info("  3. Regenerate env: dk proxy getenv <proxy_name>")
-        print_info("  4. Try manually: make up")
+        print_info("  4. Try manually: make start")
         return False
     except KeyboardInterrupt:
         print_info("\nStartup interrupted by user")
@@ -803,7 +803,7 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
         else:
             print(f"  3. Get environment variables: {Colors.OKCYAN}dk proxy getenv <proxy_name>{Colors.ENDC}")
         print(f"  4. Verify .env file has content: {Colors.OKCYAN}cat .env{Colors.ENDC}")
-        print(f"  5. Start proxy: {Colors.OKCYAN}make up{Colors.ENDC}")
+        print(f"  5. Start proxy: {Colors.OKCYAN}make start{Colors.ENDC}")
         print(f"  6. View logs: {Colors.OKCYAN}make logs{Colors.ENDC}")
         print()
     
@@ -826,7 +826,7 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     print(f"{Colors.BOLD}Useful commands:{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}make logs{Colors.ENDC}        - View proxy logs")
     print(f"  {Colors.OKBLUE}make down{Colors.ENDC}        - Stop proxy services")
-    print(f"  {Colors.OKBLUE}make up{Colors.ENDC}          - Start proxy services")
+    print(f"  {Colors.OKBLUE}make start{Colors.ENDC}       - Start proxy services")
     print(f"  {Colors.OKBLUE}make update{Colors.ENDC}      - Update proxy to latest version")
     print()
 

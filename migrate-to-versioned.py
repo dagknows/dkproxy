@@ -526,12 +526,7 @@ def migrate():
         print_info("To install: pip install awscli  OR  brew install awscli")
         print()
 
-    # Step 1: Confirm
-    if not confirm("This will enable version tracking. Continue?"):
-        print("Migration cancelled.")
-        return False
-
-    # Step 2: Check if already migrated
+    # Step 1: Check if already migrated
     if os.path.exists('version-manifest.yaml'):
         print_warning("version-manifest.yaml already exists!")
         if not confirm("Overwrite existing manifest?"):
