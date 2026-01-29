@@ -105,6 +105,14 @@ make logs        # Ctrl+C to exit (capture continues in background)
 make start
 ```
 
+### With Auto-Restart Configured
+
+If you've run `make setup-autorestart`, services start automatically on boot:
+- Proxy services start via systemd
+- Log capture starts automatically
+- Use `make start/stop/restart` for manual control
+- Logs go to `./logs/YYYY-MM-DD.log` as usual
+
 ### Checking Status
 
 ```bash
@@ -190,7 +198,19 @@ make logs-rotate
 
 ### Automatic Rotation (Recommended)
 
-Set up a cron job to rotate logs daily at midnight:
+Use the interactive setup wizard:
+
+```bash
+make setup-log-rotation
+```
+
+This wizard:
+- Shows current log disk usage
+- Explains the retention policy
+- Installs a cron job for daily rotation at midnight
+- Uses PROXY_ALIAS for unique cron job identification (supports multiple proxies)
+
+Or use the direct commands:
 
 ```bash
 make logs-cron-install   # Setup cron job
@@ -258,6 +278,16 @@ make logs-stop
 
 # Start fresh
 make logs-start
+```
+
+### Log capture started by systemd (root-owned)
+
+If auto-restart is configured, log capture may be started by systemd as root.
+The `make logs-stop` command handles this automatically by using sudo if needed:
+
+```bash
+# This works even for root-owned processes
+make logs-stop
 ```
 
 ### Proxy not connecting to DagKnows server
