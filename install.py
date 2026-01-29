@@ -116,8 +116,8 @@ def offer_autorestart_setup():
         print_success("Auto-restart is already configured")
         return True
 
-    response = input(f"{Colors.BOLD}Set up auto-restart on system boot? (yes/no) [no]: {Colors.ENDC}").strip().lower()
-    if response not in ['yes', 'y']:
+    response = input(f"{Colors.BOLD}Set up auto-restart on system boot? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
+    if response in ['no', 'n']:
         print_info("Skipping auto-restart setup")
         print_info("You can set it up later with: make setup-autorestart")
         return False
