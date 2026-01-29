@@ -196,6 +196,11 @@ help:
 	@echo "  make setup-autorestart   - Setup auto-start on system reboot"
 	@echo "  make disable-autorestart - Disable auto-start"
 	@echo "  make autorestart-status  - Check auto-restart configuration"
+	@echo ""
+	@echo "Standalone Setup Scripts (for partial upgrades):"
+	@echo "  bash setup-autorestart.sh   - Setup auto-start (interactive)"
+	@echo "  bash setup-log-rotation.sh  - Setup log rotation (interactive)"
+	@echo "  bash setup-versioning.sh    - Setup version tracking (interactive)"
 
 # ==============================================
 # SMART START/STOP/RESTART (Auto-detects mode)
@@ -243,32 +248,9 @@ restart: stop start
 # AUTO-RESTART CONFIGURATION
 # ==============================================
 
+# Interactive auto-restart setup script (requires sudo)
 setup-autorestart:
-	@echo "Setting up auto-restart on system reboot..."
-	@if [ ! -f dkproxy.service ]; then \
-		echo "ERROR: dkproxy.service not found"; \
-		exit 1; \
-	fi
-	@if [ ! -f dkproxy-startup.sh ]; then \
-		echo "ERROR: dkproxy-startup.sh not found"; \
-		exit 1; \
-	fi
-	@INSTALL_DIR=$$(pwd) && \
-	sudo cp dkproxy.service /etc/systemd/system/dkproxy.service && \
-	sudo sed -i "s|/opt/dkproxy|$$INSTALL_DIR|g" /etc/systemd/system/dkproxy.service && \
-	sudo chmod +x $$INSTALL_DIR/dkproxy-startup.sh && \
-	sudo sed -i "s|DKPROXY_DIR:-/opt/dkproxy|DKPROXY_DIR:-$$INSTALL_DIR|g" $$INSTALL_DIR/dkproxy-startup.sh && \
-	sudo systemctl daemon-reload && \
-	sudo systemctl enable dkproxy.service && \
-	echo "" && \
-	echo "Auto-restart configured successfully!" && \
-	echo "  - Services will start automatically on system boot" && \
-	echo "  - Log capture will start automatically" && \
-	echo "" && \
-	echo "Commands:" && \
-	echo "  make start   - Start services now" && \
-	echo "  make stop    - Stop services" && \
-	echo "  make status  - Check status"
+	@sudo bash setup-autorestart.sh
 
 disable-autorestart:
 	@echo "Disabling auto-restart..."
@@ -288,6 +270,20 @@ autorestart-status:
 		echo "Systemd service: NOT INSTALLED"; \
 		echo "Run 'make setup-autorestart' to enable"; \
 	fi
+
+# ============================================
+# STANDALONE SETUP SCRIPTS (for partial upgrades)
+# ============================================
+
+.PHONY: setup-log-rotation setup-versioning
+
+# Interactive log rotation setup script
+setup-log-rotation:
+	@bash setup-log-rotation.sh
+
+# Interactive versioning setup script
+setup-versioning:
+	@bash setup-versioning.sh
 
 # ============================================
 # VERSION MANAGEMENT

@@ -64,6 +64,78 @@ def check_python_venv_available():
     except Exception:
         return False
 
+def offer_log_rotation_setup():
+    """Offer to set up log rotation after proxy is running"""
+    print()
+    print(f"{Colors.BOLD}Log Rotation Setup{Colors.ENDC}")
+    print_info("Log rotation automatically manages log file sizes:")
+    print("  - Compresses logs older than 3 days")
+    print("  - Deletes logs older than 7 days")
+    print("  - Runs daily at midnight via cron")
+    print()
+
+    # Check if already configured
+    try:
+        result = run_command("crontab -l 2>/dev/null | grep -q 'dkproxy.*logs-rotate'", check=False)
+        if result:
+            print_success("Log rotation cron job is already installed")
+            return True
+    except Exception:
+        pass
+
+    response = input(f"{Colors.BOLD}Set up automatic log rotation? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
+    if response in ['no', 'n']:
+        print_info("Skipping log rotation setup")
+        print_info("You can set it up later with: make logs-cron-install")
+        return False
+
+    print_info("Installing log rotation cron job...")
+    try:
+        if run_command("make logs-cron-install", check=False):
+            print_success("Log rotation cron job installed!")
+            return True
+        else:
+            print_warning("Failed to install cron job")
+            print_info("You can try later with: make logs-cron-install")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up log rotation: {e}")
+        print_info("You can try later with: make logs-cron-install")
+        return False
+
+def offer_autorestart_setup():
+    """Offer to set up auto-restart after proxy is running"""
+    print()
+    print(f"{Colors.BOLD}Auto-Restart Setup{Colors.ENDC}")
+    print_info("Auto-restart enables the proxy to start automatically on system boot.")
+    print_warning("Note: This requires sudo privileges")
+    print()
+
+    # Check if already configured
+    if os.path.exists('/etc/systemd/system/dkproxy.service'):
+        print_success("Auto-restart is already configured")
+        return True
+
+    response = input(f"{Colors.BOLD}Set up auto-restart on system boot? (yes/no) [no]: {Colors.ENDC}").strip().lower()
+    if response not in ['yes', 'y']:
+        print_info("Skipping auto-restart setup")
+        print_info("You can set it up later with: make setup-autorestart")
+        return False
+
+    print_info("Setting up auto-restart (requires sudo)...")
+    try:
+        if run_command("make setup-autorestart", check=False):
+            print_success("Auto-restart configured!")
+            return True
+        else:
+            print_warning("Failed to set up auto-restart")
+            print_info("You can try later with: make setup-autorestart")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up auto-restart: {e}")
+        print_info("You can try later with: make setup-autorestart")
+        return False
+
 def check_pip_available():
     """Check if pip3 is available"""
     return shutil.which('pip3') is not None or shutil.which('pip') is not None
@@ -267,13 +339,8 @@ def setup_virtual_environment():
         except Exception:
             print_warning("Could not check dagknows CLI version")
         
-        # Ask if user wants to reinstall
-        response = input(f"{Colors.BOLD}Do you want to reinstall dagknows CLI? (yes/no) [no]: {Colors.ENDC}").strip().lower()
-        if response not in ['yes', 'y']:
-            print_info("Keeping existing dagknows CLI installation")
-            return True
-        
-        print_info("Reinstalling dagknows CLI...")
+        # Always reinstall to ensure latest version with bug fixes and new features
+        print_info("Reinstalling dagknows CLI to ensure latest version...")
     else:
         print_info("dagknows CLI not found in virtual environment")
         print_info("Installing dagknows CLI (this may take a moment)...")
@@ -689,7 +756,13 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     print(f"  {Colors.OKBLUE}make up{Colors.ENDC}          - Start proxy services")
     print(f"  {Colors.OKBLUE}make update{Colors.ENDC}      - Update proxy to latest version")
     print()
-    
+
+    print(f"{Colors.BOLD}Optional Setup Commands:{Colors.ENDC}")
+    print(f"  {Colors.OKBLUE}make setup-autorestart{Colors.ENDC}   - Auto-start on system reboot")
+    print(f"  {Colors.OKBLUE}make logs-cron-install{Colors.ENDC}   - Daily log rotation")
+    print(f"  {Colors.OKBLUE}make migrate-versions{Colors.ENDC}    - Enable version tracking")
+    print()
+
     print(f"{Colors.BOLD}DagKnows CLI commands (activate venv first):{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}source ~/dkenv/bin/activate{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}dk version{Colors.ENDC}       - Check CLI version")
@@ -860,7 +933,20 @@ def main():
         
         # Start proxy
         proxy_started = start_proxy(use_sg)
-        
+
+        # Offer optional post-installation setup if proxy started successfully
+        if proxy_started:
+            print()
+            print_header("Optional Features Setup")
+            print_info("These features are optional but recommended for production use.")
+            print()
+
+            # Offer log rotation setup (default yes, recommended)
+            offer_log_rotation_setup()
+
+            # Offer auto-restart setup (default no, requires sudo)
+            offer_autorestart_setup()
+
         # Show final instructions (even if proxy didn't start, so user knows what to do)
         print_final_instructions(proxy_name, use_sg, proxy_started)
         
