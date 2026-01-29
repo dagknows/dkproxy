@@ -158,6 +158,9 @@ help:
 	@echo "DagKnows Proxy Management Commands"
 	@echo "==================================="
 	@echo ""
+	@echo "Installation:"
+	@echo "  make install      - Run the installation wizard"
+	@echo ""
 	@echo "Service Management:"
 	@echo "  make up           - Start proxy services (+ auto log capture)"
 	@echo "  make down         - Stop all services"
@@ -272,7 +275,11 @@ autorestart-status:
 # STANDALONE SETUP SCRIPTS (for partial upgrades)
 # ============================================
 
-.PHONY: setup-log-rotation setup-versioning
+.PHONY: install setup-log-rotation setup-versioning
+
+# Interactive installation wizard
+install:
+	@python3 install.py
 
 # Interactive log rotation setup script
 setup-log-rotation:

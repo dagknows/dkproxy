@@ -2,6 +2,9 @@
 """
 DagKnows Proxy Installation Wizard
 Automates the installation process for DagKnows Proxy on docker-compose setups
+
+Usage:
+    make install
 """
 
 import os
