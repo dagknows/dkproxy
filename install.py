@@ -691,6 +691,12 @@ def start_proxy(use_sg=False):
         subprocess.run(cmd, shell=True, check=True)
         print_success("Proxy services started successfully")
         print()
+
+        # Give containers time to initialize before proceeding
+        print_info("Waiting for proxy to initialize...")
+        time.sleep(8)
+        print_success("Proxy is ready")
+        print()
         print_info("View logs anytime with: make logs")
         return True
     except subprocess.CalledProcessError:
