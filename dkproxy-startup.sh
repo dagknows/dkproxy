@@ -7,10 +7,16 @@ set -e
 # Configuration - these are set during setup-autorestart installation
 DKPROXY_DIR="${DKPROXY_DIR:-/opt/dkproxy}"
 
-# Derive unique log file name from parent directory
-# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> /var/log/dkproxy-startup-freshproxy.log
-PARENT_DIR=$(basename "$(dirname "$DKPROXY_DIR")")
-LOG_FILE="/var/log/dkproxy-startup-${PARENT_DIR}.log"
+# Derive unique log file name from PROXY_ALIAS in .env
+# e.g., PROXY_ALIAS=freshproxy15 -> /var/log/dkproxy-startup-freshproxy15.log
+if [ -f "$DKPROXY_DIR/.env" ]; then
+    PROXY_ALIAS=$(grep -E "^PROXY_ALIAS=" "$DKPROXY_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || true)
+fi
+if [ -z "$PROXY_ALIAS" ]; then
+    # Fallback to parent directory if no PROXY_ALIAS
+    PROXY_ALIAS=$(basename "$(dirname "$DKPROXY_DIR")")
+fi
+LOG_FILE="/var/log/dkproxy-startup-${PROXY_ALIAS}.log"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"

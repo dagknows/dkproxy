@@ -17,10 +17,17 @@ trap 'echo ""; echo -e "\033[0;31m✗ ERROR: Setup interrupted by user\033[0m"; 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="${DKPROXY_INSTALL_DIR:-$SCRIPT_DIR}"
 
-# Derive unique service name from parent directory
-# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
-PARENT_DIR=$(basename "$(dirname "$INSTALL_DIR")")
-SERVICE_NAME="dkproxy-${PARENT_DIR}.service"
+# Derive unique service name from PROXY_ALIAS in .env
+# e.g., PROXY_ALIAS=freshproxy15 -> dkproxy-freshproxy15.service
+# Falls back to parent directory if PROXY_ALIAS not found
+if [ -f "$INSTALL_DIR/.env" ]; then
+    PROXY_ALIAS=$(grep -E "^PROXY_ALIAS=" "$INSTALL_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || true)
+fi
+if [ -z "$PROXY_ALIAS" ]; then
+    # Fallback to parent directory if no PROXY_ALIAS
+    PROXY_ALIAS=$(basename "$(dirname "$INSTALL_DIR")")
+fi
+SERVICE_NAME="dkproxy-${PROXY_ALIAS}.service"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}"
 
 # Colors for output
@@ -155,7 +162,7 @@ cp "$INSTALL_DIR/dkproxy.service" "$SERVICE_FILE"
 sed -i "s|/opt/dkproxy|$INSTALL_DIR|g" "$SERVICE_FILE"
 
 # Update description to include the identifier
-sed -i "s|DagKnows Proxy Services|DagKnows Proxy Services ($PARENT_DIR)|g" "$SERVICE_FILE"
+sed -i "s|DagKnows Proxy Services|DagKnows Proxy Services ($PROXY_ALIAS)|g" "$SERVICE_FILE"
 
 print_success "Systemd service file installed: $SERVICE_NAME"
 
@@ -192,7 +199,7 @@ echo ""
 
 echo -e "${BOLD}View Logs:${NC}"
 echo -e "  ${BLUE}make logs${NC}                              - View live container logs"
-echo -e "  ${BLUE}cat /var/log/dkproxy-startup-${PARENT_DIR}.log${NC} - View startup log"
+echo -e "  ${BLUE}cat /var/log/dkproxy-startup-${PROXY_ALIAS}.log${NC} - View startup log"
 echo ""
 
 echo -e "${BOLD}To Disable Auto-Restart:${NC}"

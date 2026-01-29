@@ -2,10 +2,14 @@
 LOG_DIR=./logs
 LOG_PID_FILE=./logs/.capture.pid
 
-# Derive unique service name from parent directory
-# e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
-PARENT_DIR := $(notdir $(patsubst %/,%,$(dir $(CURDIR))))
-SERVICE_NAME := dkproxy-$(PARENT_DIR).service
+# Derive unique service name from PROXY_ALIAS in .env
+# e.g., PROXY_ALIAS=freshproxy15 -> dkproxy-freshproxy15.service
+# Falls back to parent directory if PROXY_ALIAS not found
+PROXY_ALIAS := $(shell grep -E "^PROXY_ALIAS=" .env 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+ifeq ($(PROXY_ALIAS),)
+    PROXY_ALIAS := $(notdir $(patsubst %/,%,$(dir $(CURDIR))))
+endif
+SERVICE_NAME := dkproxy-$(PROXY_ALIAS).service
 SERVICE_FILE := /etc/systemd/system/$(SERVICE_NAME)
 
 .PHONY: logs logs-start logs-stop logs-today logs-errors logs-service logs-search logs-rotate logs-status logs-clean logs-cron-install logs-cron-remove logdirs

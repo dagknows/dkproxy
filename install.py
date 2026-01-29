@@ -106,12 +106,27 @@ def offer_log_rotation_setup():
         print_info("You can try later with: make logs-cron-install")
         return False
 
-def get_service_name():
-    """Get the unique service name based on parent directory"""
-    # e.g., /home/user/freshproxy/dkproxy -> freshproxy -> dkproxy-freshproxy.service
+def get_proxy_alias():
+    """Get PROXY_ALIAS from .env file, fallback to parent directory"""
+    env_file = os.path.join(os.getcwd(), '.env')
+    if os.path.exists(env_file):
+        try:
+            with open(env_file) as f:
+                for line in f:
+                    if line.startswith('PROXY_ALIAS='):
+                        value = line.split('=', 1)[1].strip()
+                        # Remove quotes if present
+                        return value.strip('"').strip("'")
+        except Exception:
+            pass
+    # Fallback to parent directory
     current_dir = os.path.abspath(os.getcwd())
-    parent_dir = os.path.basename(os.path.dirname(current_dir))
-    return f"dkproxy-{parent_dir}.service"
+    return os.path.basename(os.path.dirname(current_dir))
+
+def get_service_name():
+    """Get the unique service name based on PROXY_ALIAS"""
+    # e.g., PROXY_ALIAS=freshproxy15 -> dkproxy-freshproxy15.service
+    return f"dkproxy-{get_proxy_alias()}.service"
 
 def get_service_file():
     """Get the path to this installation's systemd service file"""
