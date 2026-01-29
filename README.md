@@ -80,7 +80,7 @@ make pull
 #### 7. Run your proxy
 
 ```bash
-make up logs
+make start
 ```
 
 ## Managing Your Proxy
@@ -92,10 +92,11 @@ make logs
 
 ### Stop proxy
 ```bash
-make down
+make stop
 ```
 
 ### Update proxy
 ```bash
-make update up logs
+make update
+make start
 ```

@@ -6,7 +6,7 @@ This guide explains how logging works in dkproxy and how to use it for debugging
 
 ```bash
 # Start the proxy (logging starts automatically)
-make up          # Start services + auto-starts background log capture
+make start       # Start services + auto-starts background log capture
 
 # View live logs when needed
 make logs        # Real-time log stream (Ctrl+C to exit)
@@ -18,7 +18,7 @@ make logs-errors # View errors only
 
 ## How It Works
 
-When you run `make up`, two things happen:
+When you run `make start`, two things happen:
 1. Proxy services start in Docker containers (outpost, cmd-exec, vault)
 2. Background log capture automatically starts
 
@@ -92,7 +92,7 @@ The dkproxy consists of 3 services:
 
 ```bash
 # Start proxy (auto-starts log capture)
-make up
+make start
 
 # View live logs if needed
 make logs        # Ctrl+C to exit (capture continues in background)
@@ -101,15 +101,15 @@ make logs        # Ctrl+C to exit (capture continues in background)
 ### After Restart/Reboot
 
 ```bash
-# Simply run make up again
-make up
+# Simply run make start again
+make start
 ```
 
 ### Checking Status
 
 ```bash
 # Check if services are running
-docker compose ps
+make status
 
 # Check if log capture is running
 make logs-status
