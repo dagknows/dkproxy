@@ -23,7 +23,7 @@ logdirs:
 	@sudo chown -R $$(id -u):$$(id -g) $(LOG_DIR) 2>/dev/null || true
 
 logs-start: logdirs
-	@if [ -f $(LOG_PID_FILE) ] && kill -0 $$(cat $(LOG_PID_FILE)) 2>/dev/null; then \
+	@if [ -f $(LOG_PID_FILE) ] && ps -p $$(cat $(LOG_PID_FILE)) > /dev/null 2>&1; then \
 		echo "Log capture already running (PID: $$(cat $(LOG_PID_FILE)))"; \
 	else \
 		echo "Starting background log capture to $(LOG_DIR)/$$(date +%Y-%m-%d).log"; \
@@ -31,7 +31,7 @@ logs-start: logdirs
 		PID=$$!; \
 		echo $$PID > $(LOG_PID_FILE); \
 		sleep 1; \
-		if kill -0 $$PID 2>/dev/null; then \
+		if ps -p $$PID > /dev/null 2>&1; then \
 			echo "Log capture started (PID: $$PID)"; \
 		else \
 			echo "Warning: Log capture process exited immediately"; \
@@ -44,7 +44,7 @@ logs-start: logdirs
 logs-stop:
 	@if [ -f $(LOG_PID_FILE) ]; then \
 		PID=$$(cat $(LOG_PID_FILE)); \
-		if kill -0 $$PID 2>/dev/null; then \
+		if ps -p $$PID > /dev/null 2>&1; then \
 			if kill $$PID 2>/dev/null; then \
 				rm -f $(LOG_PID_FILE); \
 				echo "Log capture stopped (PID: $$PID)"; \
@@ -53,7 +53,7 @@ logs-stop:
 				echo "Log capture stopped (PID: $$PID, required sudo)"; \
 			else \
 				echo "Warning: Could not stop log capture (PID: $$PID)"; \
-				echo "  Process may be owned by root. Try: sudo kill $$PID"; \
+				echo "  Process is owned by root. Try: sudo kill $$PID"; \
 			fi; \
 		else \
 			rm -f $(LOG_PID_FILE) 2>/dev/null || sudo -n rm -f $(LOG_PID_FILE) 2>/dev/null || true; \
