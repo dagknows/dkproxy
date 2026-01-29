@@ -545,7 +545,7 @@ def migrate():
 
     if not images:
         print_warning("No running containers detected.")
-        print_info("Make sure services are running with 'make up' before migration.")
+        print_info("Make sure services are running with 'make start' before migration.")
         if not confirm("Continue anyway (will use 'latest' for all services)?"):
             print("Migration cancelled.")
             return False
@@ -564,15 +564,11 @@ def migrate():
             print_info("If resolution failed, these will be tracked as 'latest' in the manifest.")
             print_info("You can update to specific versions later using: make version-pull TAG=1.35")
 
-    if not confirm("\nCreate manifest from detected images?"):
-        print("Migration cancelled.")
-        return False
-
     # Step 4: Get optional deployment info
     print_step("Deployment Information (optional)")
 
     customer_id = input("Customer ID (press Enter to skip): ").strip()
-    deployment_id = input("Deployment ID (press Enter for auto-generated): ").strip()
+    deployment_id = ""  # Auto-generated from hostname
 
     # Step 5: Create manifest
     print_step("Creating version-manifest.yaml...")
@@ -601,7 +597,7 @@ def migrate():
         print()
         print(f"{Colors.BOLD}Next steps:{Colors.ENDC}")
         print("  1. Run 'make version' to see current versions")
-        print("  2. Run 'make up' to restart with version tracking")
+        print("  2. Run 'make start' to restart with version tracking")
         print("  3. Run 'make help-version' for all version commands")
         print()
         return True
