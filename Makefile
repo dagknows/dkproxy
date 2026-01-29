@@ -48,14 +48,15 @@ logs-stop:
 			if kill $$PID 2>/dev/null; then \
 				rm -f $(LOG_PID_FILE); \
 				echo "Log capture stopped (PID: $$PID)"; \
-			elif sudo kill $$PID 2>/dev/null; then \
-				rm -f $(LOG_PID_FILE); \
+			elif sudo -n kill $$PID 2>/dev/null; then \
+				sudo -n rm -f $(LOG_PID_FILE) 2>/dev/null || rm -f $(LOG_PID_FILE) 2>/dev/null || true; \
 				echo "Log capture stopped (PID: $$PID, required sudo)"; \
 			else \
 				echo "Warning: Could not stop log capture (PID: $$PID)"; \
+				echo "  Process may be owned by root. Try: sudo kill $$PID"; \
 			fi; \
 		else \
-			rm -f $(LOG_PID_FILE); \
+			rm -f $(LOG_PID_FILE) 2>/dev/null || sudo -n rm -f $(LOG_PID_FILE) 2>/dev/null || true; \
 			echo "No log capture process running (stale PID file removed)"; \
 		fi; \
 	else \
