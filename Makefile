@@ -33,10 +33,23 @@ logs-start: logdirs
 	fi
 
 logs-stop:
-	@if [ -f $(LOG_PID_FILE) ] && kill -0 $$(cat $(LOG_PID_FILE)) 2>/dev/null; then \
-		kill $$(cat $(LOG_PID_FILE)) && rm -f $(LOG_PID_FILE) && echo "Log capture stopped"; \
+	@if [ -f $(LOG_PID_FILE) ]; then \
+		PID=$$(cat $(LOG_PID_FILE)); \
+		if kill -0 $$PID 2>/dev/null; then \
+			if kill $$PID 2>/dev/null; then \
+				rm -f $(LOG_PID_FILE); \
+				echo "Log capture stopped (PID: $$PID)"; \
+			elif sudo kill $$PID 2>/dev/null; then \
+				rm -f $(LOG_PID_FILE); \
+				echo "Log capture stopped (PID: $$PID, required sudo)"; \
+			else \
+				echo "Warning: Could not stop log capture (PID: $$PID)"; \
+			fi; \
+		else \
+			rm -f $(LOG_PID_FILE); \
+			echo "No log capture process running (stale PID file removed)"; \
+		fi; \
 	else \
-		rm -f $(LOG_PID_FILE); \
 		echo "No log capture process running"; \
 	fi
 
