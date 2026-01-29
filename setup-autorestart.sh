@@ -226,7 +226,7 @@ if [[ "$start_now" =~ ^[Yy] ]]; then
 
         # Verify log capture is running
         LOG_PID_FILE="$INSTALL_DIR/logs/.capture.pid"
-        if [ -f "$LOG_PID_FILE" ] && kill -0 $(cat "$LOG_PID_FILE") 2>/dev/null; then
+        if [ -f "$LOG_PID_FILE" ] && ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
             print_success "Background log capture running (PID: $(cat "$LOG_PID_FILE"))"
         else
             print_warning "Background log capture may not be running"

@@ -773,10 +773,14 @@ def start_proxy(use_sg=False):
             try:
                 with open(log_pid_file) as f:
                     pid = int(f.read().strip())
-                # Check if process is running
-                os.kill(pid, 0)
-                print_success(f"Background log capture running (PID: {pid})")
-            except (ValueError, ProcessLookupError, PermissionError):
+                # Check if process is running using ps -p (works regardless of owner)
+                result = subprocess.run(['ps', '-p', str(pid)], capture_output=True)
+                if result.returncode == 0:
+                    print_success(f"Background log capture running (PID: {pid})")
+                else:
+                    print_warning("Background log capture not running (stale PID file)")
+                    print_info("  It will start automatically on next 'make start'")
+            except (ValueError, OSError):
                 print_warning("Background log capture may not be running")
                 print_info("  You can start it manually with: make logs-start")
         else:

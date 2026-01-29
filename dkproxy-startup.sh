@@ -64,7 +64,7 @@ if [ -d "$DKPROXY_DIR" ]; then
     fi
 fi
 
-if [ ! -f "$LOG_PID_FILE" ] || ! kill -0 $(cat "$LOG_PID_FILE") 2>/dev/null; then
+if [ ! -f "$LOG_PID_FILE" ] || ! ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
     log "Starting background log capture"
     nohup docker compose logs -f >> "$LOG_CAPTURE_DIR/$(date +%Y-%m-%d).log" 2>&1 &
     echo $! > "$LOG_PID_FILE"
