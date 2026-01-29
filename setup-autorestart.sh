@@ -223,6 +223,16 @@ if [[ "$start_now" =~ ^[Yy] ]]; then
     print_info "Starting proxy services via systemd..."
     if systemctl start "$SERVICE_NAME"; then
         print_success "Proxy services started successfully!"
+
+        # Wait a moment and verify log capture started
+        sleep 2
+        LOG_PID_FILE="$INSTALL_DIR/logs/.capture.pid"
+        if [ -f "$LOG_PID_FILE" ] && kill -0 $(cat "$LOG_PID_FILE") 2>/dev/null; then
+            print_success "Background log capture running (PID: $(cat "$LOG_PID_FILE"))"
+        else
+            print_warning "Background log capture may not be running"
+            echo "  You can start it manually with: make logs-start"
+        fi
         echo ""
         echo "View logs with: make logs"
     else

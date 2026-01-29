@@ -766,6 +766,23 @@ def start_proxy(use_sg=False):
         print_info("Waiting for proxy to initialize...")
         time.sleep(8)
         print_success("Proxy is ready")
+
+        # Verify log capture is running
+        log_pid_file = os.path.join(os.getcwd(), 'logs', '.capture.pid')
+        if os.path.exists(log_pid_file):
+            try:
+                with open(log_pid_file) as f:
+                    pid = int(f.read().strip())
+                # Check if process is running
+                os.kill(pid, 0)
+                print_success(f"Background log capture running (PID: {pid})")
+            except (ValueError, ProcessLookupError, PermissionError):
+                print_warning("Background log capture may not be running")
+                print_info("  You can start it manually with: make logs-start")
+        else:
+            print_warning("Background log capture may not be running")
+            print_info("  You can start it manually with: make logs-start")
+
         print()
         print_info("View logs anytime with: make logs")
         return True
