@@ -156,13 +156,16 @@ def offer_autorestart_setup():
         return False
 
 def offer_versioning_setup():
-    """Offer to set up version tracking after proxy is running"""
+    """Set up version tracking after proxy is running (automatic, no prompt)"""
     print()
     print(f"{Colors.BOLD}Version Management Setup{Colors.ENDC}")
-    print_info("Version management pins Docker images to specific versions:")
-    print("  - Reproducible deployments with pinned versions")
-    print("  - Easy rollback if an update causes issues")
-    print("  - Track version history over time")
+    print_info("Setting up version management:")
+    print("  - Pins Docker images to specific versions")
+    print("  - Enables reproducible deployments")
+    print("  - Supports easy rollback if updates cause issues")
+    print()
+    print_warning("NOTE: AWS CLI must be configured to fetch latest ECR image tags.")
+    print_warning("      Run 'aws configure' if you haven't set up AWS credentials.")
     print()
 
     # Check if already configured
@@ -170,13 +173,7 @@ def offer_versioning_setup():
         print_success("Version management is already configured")
         return True
 
-    response = input(f"{Colors.BOLD}Set up version management? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
-    if response in ['no', 'n']:
-        print_info("Skipping version management setup")
-        print_info("You can set it up later with: make setup-versioning")
-        return False
-
-    print_info("Setting up version management...")
+    print_info("Installing version management...")
     try:
         if run_command("make migrate-versions", check=False):
             print_success("Version management configured!")
@@ -190,6 +187,7 @@ def offer_versioning_setup():
             return True
         else:
             print_warning("Failed to set up version management")
+            print_info("This may be due to AWS CLI not being configured.")
             print_info("You can try later with: make setup-versioning")
             return False
     except Exception as e:
