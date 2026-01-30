@@ -131,7 +131,9 @@ update: down pull build
 up: down ensureitems logdirs
 	@# Generate versions.env from manifest if it exists
 	@if [ -f "version-manifest.yaml" ]; then \
-		python3 version-manager.py generate-env 2>/dev/null || true; \
+		if ! python3 version-manager.py generate-env 2>/dev/null; then \
+			echo "Warning: Failed to generate versions.env - using default versions"; \
+		fi; \
 	fi
 	@# Start services with version env if available
 	@if [ -f "versions.env" ]; then \
@@ -255,7 +257,9 @@ start: stop logdirs
 		echo "Starting services..."; \
 		docker network create saaslocalnetwork 2>/dev/null || true; \
 		if [ -f "version-manifest.yaml" ]; then \
-			python3 version-manager.py generate-env 2>/dev/null || true; \
+			if ! python3 version-manager.py generate-env 2>/dev/null; then \
+				echo "Warning: Failed to generate versions.env - using default versions"; \
+			fi; \
 		fi; \
 		if [ -f "versions.env" ]; then \
 			set -a && . ./versions.env && set +a && \

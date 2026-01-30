@@ -31,7 +31,9 @@ docker network create saaslocalnetwork 2>/dev/null || true
 
 # Generate versions.env from manifest if it exists
 if [ -f "$DKPROXY_DIR/version-manifest.yaml" ]; then
-    python3 "$DKPROXY_DIR/version-manager.py" generate-env 2>/dev/null || true
+    if ! python3 "$DKPROXY_DIR/version-manager.py" generate-env 2>/dev/null; then
+        log "Warning: Failed to generate versions.env - using default versions"
+    fi
 fi
 
 # Load versions.env if available
