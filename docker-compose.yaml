@@ -4,6 +4,8 @@ services:
   cmd-exec:
     restart: unless-stopped
     image: ${DK_CMD_EXEC_IMAGE:-public.ecr.aws/n5k3t9x2/cmd_exec}:${DK_CMD_EXEC_TAG:-latest}
+    networks:
+      - saaslocalnetwork
     # For local development, comment out 'image' above and uncomment 'build' below:
     # build: ./cmd_exec
     environment:
@@ -18,6 +20,8 @@ services:
   vault:
     restart: unless-stopped
     image: ${DK_VAULT_IMAGE:-hashicorp/vault}:${DK_VAULT_TAG:-latest}
+    networks:
+      - saaslocalnetwork
     cap_add:
           - IPC_LOCK
     volumes:
@@ -31,6 +35,8 @@ services:
   outpost:
     restart: unless-stopped
     image: ${DK_OUTPOST_IMAGE:-public.ecr.aws/n5k3t9x2/outpost}:${DK_OUTPOST_TAG:-latest}
+    networks:
+      - saaslocalnetwork
     # For local development, comment out 'image' above and uncomment 'build' below:
     # build: ./outpost
     volumes:
@@ -48,3 +54,8 @@ services:
       - RECONNECT_TIMER=5
       - VERBOSE=${VERBOSE}
     command: ["/app/main"]
+
+networks:
+  saaslocalnetwork:
+    name: saaslocalnetwork
+    driver: bridge
