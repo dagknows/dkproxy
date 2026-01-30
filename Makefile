@@ -275,8 +275,13 @@ stop: logs-stop
 	@if [ -f $(SERVICE_FILE) ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
-	@docker compose down 2>/dev/null || true
-	@echo "All services stopped."
+	@if docker compose down; then \
+		echo "All services stopped."; \
+	else \
+		echo "Warning: docker compose down failed - containers may still be running"; \
+		echo "  Try: docker ps  (to see running containers)"; \
+		echo "  Try: make down  (from the dkproxy directory)"; \
+	fi
 
 # Smart restart
 restart: stop start
