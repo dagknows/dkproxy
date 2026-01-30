@@ -803,6 +803,23 @@ def start_proxy(use_sg=False):
         print_info("\nStartup interrupted by user")
         return False
 
+def get_running_proxy_containers():
+    """Check if any proxy-related containers are running and return their details."""
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Status}}\t{{.Image}}"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            containers = []
+            for line in result.stdout.strip().split('\n'):
+                if line and any(x in line.lower() for x in ['outpost', 'cmd-exec', 'vault', 'cmd_exec']):
+                    containers.append(line)
+            return containers
+    except Exception:
+        pass
+    return []
+
 def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     """Print final success message and instructions"""
     if proxy_started:
@@ -919,41 +936,49 @@ def main():
     
     # Check current installation state
     state = check_installation_state()
-    
-    # Handle resume scenarios
-    if state['proxy_running']:
-        print_header("Existing Installation Detected")
-        print_success("Proxy services are already running!")
-        
-        if state['proxy_name']:
-            print_info(f"Detected proxy: {state['proxy_name']}")
-        
+
+    # Check for running proxy containers (from any proxy installation)
+    running_containers = get_running_proxy_containers()
+
+    if running_containers:
+        # Proxy containers are running - show them and ask for confirmation
         print()
-        print(f"{Colors.BOLD}Your DagKnows Proxy installation appears to be complete.{Colors.ENDC}")
+        print(f"{Colors.WARNING}{Colors.BOLD}⚠  WARNING: Proxy containers are already running:{Colors.ENDC}")
+        print("-" * 70)
+        print(f"{Colors.BOLD}{'CONTAINER NAME':<35} {'STATUS':<20} {'IMAGE'}{Colors.ENDC}")
+        print("-" * 70)
+        for container in running_containers:
+            parts = container.split('\t')
+            if len(parts) >= 3:
+                print(f"{parts[0]:<35} {parts[1]:<20} {parts[2]}")
+            elif len(parts) == 2:
+                print(f"{parts[0]:<35} {parts[1]:<20}")
+            else:
+                print(f"{container}")
+        print("-" * 70)
         print()
-        print("Available actions:")
-        print("  1. View logs: make logs")
-        print("  2. Stop proxy: make stop")
-        print("  3. Update proxy: make update")
+        print_warning("Running the install wizard may affect these containers.")
         print()
-        response = input(f"{Colors.BOLD}Do you want to reinstall anyway? (yes/no) [no]: {Colors.ENDC}").strip().lower()
+        print("Available actions for existing proxies:")
+        print("  • View logs: make logs")
+        print("  • Stop proxy: make stop")
+        print("  • Update proxy: make update")
+        print()
+
+        response = input(f"{Colors.BOLD}Do you want to continue with installation? (yes/no) [no]: {Colors.ENDC}").strip().lower()
         if response not in ['yes', 'y']:
-            print_info("Installation skipped. Proxy is already running.")
+            print_info("Installation cancelled.")
             sys.exit(0)
-    
-    # Confirmation for install
-    print_warning("This script will:")
+
+    # Show what the wizard will do (no confirmation needed for fresh installs)
+    print()
+    print_info("This wizard will:")
     print("  1. Install system dependencies (Docker, make, Python venv, etc.)")
     print("  2. Setup Python virtual environment at ~/dkenv")
     print("  3. Install and configure DagKnows CLI")
     print("  4. Create and configure a proxy")
     print("  5. Pull Docker images and start proxy services")
     print()
-    
-    response = input(f"{Colors.BOLD}Do you want to continue? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
-    if response in ['no', 'n']:
-        print_info("Installation cancelled by user")
-        sys.exit(0)
     
     try:
         # Pre-flight checks
