@@ -2,7 +2,7 @@ version: '3'
 name: ${PROXY_ALIAS}
 services:
   cmd-exec:
-    restart: always
+    restart: unless-stopped
     image: ${DK_CMD_EXEC_IMAGE:-public.ecr.aws/n5k3t9x2/cmd_exec}:${DK_CMD_EXEC_TAG:-latest}
     # For local development, comment out 'image' above and uncomment 'build' below:
     # build: ./cmd_exec
@@ -16,7 +16,7 @@ services:
     command: ["python", "src/cmd_exec.py"]
 
   vault:
-    restart: always
+    restart: unless-stopped
     image: ${DK_VAULT_IMAGE:-hashicorp/vault}:${DK_VAULT_TAG:-latest}
     cap_add:
           - IPC_LOCK
@@ -29,7 +29,7 @@ services:
     command: vault server -config=/vault/config/local.json
 
   outpost:
-    restart: always
+    restart: unless-stopped
     image: ${DK_OUTPOST_IMAGE:-public.ecr.aws/n5k3t9x2/outpost}:${DK_OUTPOST_TAG:-latest}
     # For local development, comment out 'image' above and uncomment 'build' below:
     # build: ./outpost
