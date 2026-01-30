@@ -26,8 +26,7 @@ log "Starting DagKnows Proxy services"
 
 cd "$DKPROXY_DIR"
 
-# Ensure network exists
-docker network create saaslocalnetwork 2>/dev/null || true
+# Network is created automatically by Docker Compose with named network config
 
 # Generate versions.env from manifest if it exists
 if [ -f "$DKPROXY_DIR/version-manifest.yaml" ]; then

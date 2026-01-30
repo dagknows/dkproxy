@@ -255,7 +255,6 @@ start: stop logdirs
 		echo "Done. Use 'make status' to check."; \
 	else \
 		echo "Starting services..."; \
-		docker network create saaslocalnetwork 2>/dev/null || true; \
 		if [ -f "version-manifest.yaml" ]; then \
 			if ! python3 version-manager.py generate-env 2>/dev/null; then \
 				echo "Warning: Failed to generate versions.env - using default versions"; \

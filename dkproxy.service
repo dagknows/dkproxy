@@ -9,8 +9,7 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/dkproxy
 Environment=DKPROXY_DIR=/opt/dkproxy
-# Use - prefix to ignore failure if network already exists
-ExecStartPre=-/usr/bin/docker network create saaslocalnetwork
+# Network is created automatically by Docker Compose with named network config
 ExecStart=/opt/dkproxy/dkproxy-startup.sh
 ExecStop=/usr/bin/docker compose -f /opt/dkproxy/docker-compose.yaml down
 TimeoutStartSec=120
