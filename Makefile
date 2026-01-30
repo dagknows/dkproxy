@@ -299,11 +299,11 @@ setup-autorestart:
 
 disable-autorestart:
 	@echo "Disabling auto-restart for $(SERVICE_NAME)..."
-	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true
 	@sudo systemctl disable $(SERVICE_NAME) 2>/dev/null || true
 	@sudo rm -f $(SERVICE_FILE)
 	@sudo systemctl daemon-reload
 	@echo "Auto-restart disabled."
+	@echo "Note: Containers are still running. Use 'make stop' to stop them."
 
 autorestart-status:
 	@echo "=== Auto-Restart Status ==="
