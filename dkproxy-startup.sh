@@ -48,9 +48,9 @@ if ! docker compose up -d; then
     exit 1
 fi
 
-# Wait for containers to stabilize
+# Wait for containers to stabilize (15s to ensure all services are ready)
 log "Waiting for containers to stabilize..."
-sleep 3
+sleep 15
 
 # Start background log capture
 LOG_CAPTURE_DIR="$DKPROXY_DIR/logs"
@@ -68,8 +68,17 @@ fi
 if [ ! -f "$LOG_PID_FILE" ] || ! ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
     log "Starting background log capture"
     nohup docker compose logs -f >> "$LOG_CAPTURE_DIR/$(date +%Y-%m-%d).log" 2>&1 &
-    echo $! > "$LOG_PID_FILE"
-    log "Log capture started (PID: $!)"
+    LOG_PID=$!
+    echo $LOG_PID > "$LOG_PID_FILE"
+
+    # Verify log capture process is still running after a brief delay
+    sleep 1
+    if ps -p $LOG_PID > /dev/null 2>&1; then
+        log "Log capture started (PID: $LOG_PID)"
+    else
+        log "Warning: Log capture process exited immediately - containers may still be initializing"
+        rm -f "$LOG_PID_FILE"
+    fi
 else
     log "Log capture already running (PID: $(cat "$LOG_PID_FILE"))"
 fi

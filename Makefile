@@ -250,7 +250,7 @@ start: stop logdirs
 		echo "Starting services via systemd ($(SERVICE_NAME))..."; \
 		sudo systemctl start $(SERVICE_NAME); \
 		echo "Waiting for containers to initialize..."; \
-		sleep 5; \
+		sleep 15; \
 		$(MAKE) logs-start; \
 		echo "Done. Use 'make status' to check."; \
 	else \
@@ -267,7 +267,7 @@ start: stop logdirs
 			docker compose up -d; \
 		fi; \
 		echo "Waiting for containers to initialize..."; \
-		sleep 5; \
+		sleep 15; \
 		$(MAKE) logs-start; \
 		echo "Services started."; \
 	fi
