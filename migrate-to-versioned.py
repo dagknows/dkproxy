@@ -559,11 +559,10 @@ def migrate():
             print_info("If resolution failed, these will be tracked as 'latest' in the manifest.")
             print_info("You can update to specific versions later using: make version-pull TAG=1.35")
 
-    # Step 4: Get optional deployment info
-    print_step("Deployment Information (optional)")
-
-    customer_id = input("Customer ID (press Enter to skip): ").strip()
-    deployment_id = ""  # Auto-generated from hostname
+    # Deployment info: customer_id can be configured later via version-manifest.yaml
+    # Deployment ID is auto-generated from hostname
+    customer_id = ""
+    deployment_id = ""
 
     # Step 5: Create manifest
     print_step("Creating version-manifest.yaml...")

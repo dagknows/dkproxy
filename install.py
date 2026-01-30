@@ -950,8 +950,8 @@ def main():
     print("  5. Pull Docker images and start proxy services")
     print()
     
-    response = input(f"{Colors.BOLD}Do you want to continue? (yes/no): {Colors.ENDC}").strip().lower()
-    if response not in ['yes', 'y']:
+    response = input(f"{Colors.BOLD}Do you want to continue? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
+    if response in ['no', 'n']:
         print_info("Installation cancelled by user")
         sys.exit(0)
     

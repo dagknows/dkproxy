@@ -207,40 +207,26 @@ echo -e "  ${BLUE}make disable-autorestart${NC}"
 echo "  or: sudo systemctl disable $SERVICE_NAME"
 echo ""
 
-# Offer to start services now
-echo -e "${YELLOW}Would you like to start the proxy services now?${NC}"
-read -r -p "Start services? [Y/n]: " start_now
-start_now=${start_now:-Y}
+# Auto-start services (systemd was just configured, so start immediately)
+echo ""
+print_info "Starting proxy services..."
+cd "$INSTALL_DIR"
+if make start; then
+    print_success "Proxy services started successfully!"
 
-if [[ "$start_now" =~ ^[Yy] ]]; then
-    echo ""
-    # Use make start which handles everything properly:
-    # - Stops existing services
-    # - Loads versions.env if present
-    # - Starts via systemd (since we just installed it)
-    # - Starts log capture
-    print_info "Starting proxy services..."
-    cd "$INSTALL_DIR"
-    if make start; then
-        print_success "Proxy services started successfully!"
-
-        # Verify log capture is running
-        LOG_PID_FILE="$INSTALL_DIR/logs/.capture.pid"
-        if [ -f "$LOG_PID_FILE" ] && ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
-            print_success "Background log capture running (PID: $(cat "$LOG_PID_FILE"))"
-        else
-            print_warning "Background log capture may not be running"
-            echo "  You can start it manually with: make logs-start"
-        fi
-        echo ""
-        echo "View logs with: make logs"
+    # Verify log capture is running
+    LOG_PID_FILE="$INSTALL_DIR/logs/.capture.pid"
+    if [ -f "$LOG_PID_FILE" ] && ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
+        print_success "Background log capture running (PID: $(cat "$LOG_PID_FILE"))"
     else
-        print_error "Failed to start services"
-        echo "Check logs with: journalctl -u $SERVICE_NAME"
+        print_warning "Background log capture may not be running"
+        echo "  You can start it manually with: make logs-start"
     fi
-else
     echo ""
-    print_info "Services not started. Use 'make start' when ready."
+    echo "View logs with: make logs"
+else
+    print_error "Failed to start services"
+    echo "Check logs with: journalctl -u $SERVICE_NAME"
 fi
 
 echo ""
