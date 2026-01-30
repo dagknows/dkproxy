@@ -68,13 +68,13 @@ def check_python_venv_available():
         return False
 
 def offer_log_rotation_setup():
-    """Offer to set up log rotation after proxy is running"""
+    """Set up log rotation after proxy is running (automatic, no prompt)"""
     print()
     print(f"{Colors.BOLD}Log Rotation Setup{Colors.ENDC}")
-    print_info("Log rotation automatically manages log file sizes:")
-    print("  - Compresses logs older than 3 days")
-    print("  - Deletes logs older than 7 days")
-    print("  - Runs daily at midnight via cron")
+    print_info("Setting up automatic log rotation:")
+    print("  • Compresses logs older than 3 days")
+    print("  • Deletes logs older than 7 days")
+    print("  • Runs daily at midnight via cron")
     print()
 
     # Check if already configured for THIS proxy (using PROXY_ALIAS tag)
@@ -82,16 +82,10 @@ def offer_log_rotation_setup():
         proxy_alias = get_proxy_alias()
         result = run_command(f"crontab -l 2>/dev/null | grep -q '# dkproxy:{proxy_alias}'", check=False)
         if result:
-            print_success(f"Log rotation cron job is already installed for {proxy_alias}")
+            print_success(f"Log rotation is already configured for {proxy_alias}")
             return True
     except Exception:
         pass
-
-    response = input(f"{Colors.BOLD}Set up automatic log rotation? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
-    if response in ['no', 'n']:
-        print_info("Skipping log rotation setup")
-        print_info("You can set it up later with: make logs-cron-install")
-        return False
 
     print_info("Installing log rotation cron job...")
     try:
@@ -134,10 +128,10 @@ def get_service_file():
     return f"/etc/systemd/system/{get_service_name()}"
 
 def offer_autorestart_setup():
-    """Offer to set up auto-restart after proxy is running"""
+    """Set up auto-restart after proxy is running (automatic, no prompt)"""
     print()
     print(f"{Colors.BOLD}Auto-Restart Setup{Colors.ENDC}")
-    print_info("Auto-restart enables the proxy to start automatically on system boot.")
+    print_info("Setting up auto-restart on system boot...")
     print_warning("Note: This requires sudo privileges")
     print()
 
@@ -147,16 +141,10 @@ def offer_autorestart_setup():
         print_success(f"Auto-restart is already configured ({get_service_name()})")
         return True
 
-    response = input(f"{Colors.BOLD}Set up auto-restart on system boot? (yes/no) [yes]: {Colors.ENDC}").strip().lower()
-    if response in ['no', 'n']:
-        print_info("Skipping auto-restart setup")
-        print_info("You can set it up later with: make setup-autorestart")
-        return False
-
-    print_info("Setting up auto-restart (requires sudo)...")
+    print_info("Installing systemd service...")
     try:
         if run_command("make setup-autorestart", check=False):
-            print_success("Auto-restart configured!")
+            print_success(f"Auto-restart configured! Service: {get_service_name()}")
             return True
         else:
             print_warning("Failed to set up auto-restart")
