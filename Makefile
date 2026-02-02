@@ -15,7 +15,7 @@ SERVICE_FILE := /etc/systemd/system/$(SERVICE_NAME)
 .PHONY: logs logs-start logs-stop logs-today logs-errors logs-service logs-search logs-rotate logs-status logs-clean logs-cron-install logs-cron-remove logdirs
 
 logs:
-	docker compose logs -f --tail 300
+	@./run-docker.sh docker compose logs -f --tail 300
 
 # Log Management - Capture and filter logs
 logdirs:
@@ -27,7 +27,14 @@ logs-start: logdirs
 		echo "Log capture already running (PID: $$(cat $(LOG_PID_FILE)))"; \
 	else \
 		echo "Starting background log capture to $(LOG_DIR)/$$(date +%Y-%m-%d).log"; \
-		nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
+		if docker ps >/dev/null 2>&1; then \
+			nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
+		elif sg docker -c 'docker ps' >/dev/null 2>&1; then \
+			nohup sg docker -c 'docker compose logs -f' >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
+		else \
+			echo "ERROR: Cannot access Docker. Run 'newgrp docker' or logout/login."; \
+			exit 1; \
+		fi; \
 		PID=$$!; \
 		echo $$PID > $(LOG_PID_FILE); \
 		sleep 1; \
@@ -120,10 +127,10 @@ p2:
 		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 build: down ensureitems
-	docker compose build --no-cache
+	@./run-docker.sh docker compose build --no-cache
 
 down: logs-stop
-	docker compose down --remove-orphans
+	@./run-docker.sh docker compose down --remove-orphans
 
 update: down pull build
 	echo "Proxy updated.  Start it with: make start"
@@ -138,9 +145,9 @@ up: down ensureitems logdirs
 	@# Start services with version env if available
 	@if [ -f "versions.env" ]; then \
 		set -a && . ./versions.env && set +a && \
-		docker compose up -d; \
+		./run-docker.sh docker compose up -d; \
 	else \
-		docker compose up -d; \
+		./run-docker.sh docker compose up -d; \
 	fi
 	@echo "Starting background log capture..."
 	@sleep 3
@@ -262,9 +269,9 @@ start: stop logdirs
 		fi; \
 		if [ -f "versions.env" ]; then \
 			set -a && . ./versions.env && set +a && \
-			docker compose up -d; \
+			./run-docker.sh docker compose up -d; \
 		else \
-			docker compose up -d; \
+			./run-docker.sh docker compose up -d; \
 		fi; \
 		echo "Waiting for containers to initialize..."; \
 		sleep 15; \
@@ -278,7 +285,7 @@ stop: logs-stop
 	@if [ -f $(SERVICE_FILE) ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
-	@if docker compose down; then \
+	@if ./run-docker.sh docker compose down; then \
 		echo "All services stopped."; \
 	else \
 		echo "Warning: docker compose down failed - containers may still be running"; \
@@ -300,7 +307,7 @@ setup-autorestart:
 disable-autorestart:
 	@echo "Disabling auto-restart for $(SERVICE_NAME)..."
 	@echo "Stopping containers to prevent restart on reboot..."
-	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || docker compose down 2>/dev/null || true
+	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || ./run-docker.sh docker compose down 2>/dev/null || true
 	@sudo systemctl disable $(SERVICE_NAME) 2>/dev/null || true
 	@sudo rm -f $(SERVICE_FILE)
 	@sudo systemctl daemon-reload
