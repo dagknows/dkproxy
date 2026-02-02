@@ -167,6 +167,10 @@ ensureitems:
 	touch cmd_exec/requirements.txt
 	-mkdir -p ./outpost/sidecar/pyrunner
 	-mkdir -p ./outpost/sidecar/statuses
+	-mkdir -p ./cmd_exec/logs
+	-mkdir -p ./outpost/logs
+	-mkdir -p ./outpost/jobs
+	-mkdir -p ./vault/data
 	-sudo chmod -R a+rw ./outpost/sidecar
 	-sudo chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner
 	-sudo chmod -R a+rwx cmd_exec/logs

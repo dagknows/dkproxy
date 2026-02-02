@@ -28,6 +28,23 @@ cd "$DKPROXY_DIR"
 
 # Network is created automatically by Docker Compose with named network config
 
+# Ensure required directories exist with correct permissions (like ensureitems target)
+log "Ensuring required directories and permissions..."
+touch outpost/requirements.txt 2>/dev/null || true
+touch cmd_exec/requirements.txt 2>/dev/null || true
+mkdir -p ./outpost/sidecar/pyrunner
+mkdir -p ./outpost/sidecar/statuses
+mkdir -p ./cmd_exec/logs
+mkdir -p ./outpost/logs
+mkdir -p ./outpost/jobs
+mkdir -p ./vault/data
+chmod -R a+rw ./outpost/sidecar 2>/dev/null || true
+chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner 2>/dev/null || true
+chmod -R a+rwx ./cmd_exec/logs 2>/dev/null || true
+chmod -R a+rwx ./outpost/logs 2>/dev/null || true
+chmod -R a+rwx ./outpost/jobs 2>/dev/null || true
+chmod -R a+rwx ./vault/data 2>/dev/null || true
+
 # Generate versions.env from manifest if it exists
 if [ -f "$DKPROXY_DIR/version-manifest.yaml" ]; then
     if ! python3 "$DKPROXY_DIR/version-manager.py" generate-env 2>/dev/null; then
