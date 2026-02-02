@@ -2,10 +2,20 @@
 LOG_DIR=./logs
 LOG_PID_FILE=./logs/.capture.pid
 
+# Derive unique service name from PROXY_ALIAS in .env
+# e.g., PROXY_ALIAS=freshproxy15 -> dkproxy-freshproxy15.service
+# Falls back to parent directory if PROXY_ALIAS not found
+PROXY_ALIAS := $(shell grep -E "^PROXY_ALIAS=" .env 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+ifeq ($(PROXY_ALIAS),)
+    PROXY_ALIAS := $(notdir $(patsubst %/,%,$(dir $(CURDIR))))
+endif
+SERVICE_NAME := dkproxy-$(PROXY_ALIAS).service
+SERVICE_FILE := /etc/systemd/system/$(SERVICE_NAME)
+
 .PHONY: logs logs-start logs-stop logs-today logs-errors logs-service logs-search logs-rotate logs-status logs-clean logs-cron-install logs-cron-remove logdirs
 
 logs:
-	docker compose logs -f --tail 300
+	@./run-docker.sh docker compose logs -f --tail 300
 
 # Log Management - Capture and filter logs
 logdirs:
@@ -13,20 +23,50 @@ logdirs:
 	@sudo chown -R $$(id -u):$$(id -g) $(LOG_DIR) 2>/dev/null || true
 
 logs-start: logdirs
-	@if [ -f $(LOG_PID_FILE) ] && kill -0 $$(cat $(LOG_PID_FILE)) 2>/dev/null; then \
+	@if [ -f $(LOG_PID_FILE) ] && ps -p $$(cat $(LOG_PID_FILE)) > /dev/null 2>&1; then \
 		echo "Log capture already running (PID: $$(cat $(LOG_PID_FILE)))"; \
 	else \
 		echo "Starting background log capture to $(LOG_DIR)/$$(date +%Y-%m-%d).log"; \
-		nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
-		echo $$! > $(LOG_PID_FILE); \
-		echo "Log capture started (PID: $$!)"; \
+		if docker ps >/dev/null 2>&1; then \
+			nohup docker compose logs -f >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
+		elif sg docker -c 'docker ps' >/dev/null 2>&1; then \
+			nohup sg docker -c 'docker compose logs -f' >> $(LOG_DIR)/$$(date +%Y-%m-%d).log 2>&1 & \
+		else \
+			echo "ERROR: Cannot access Docker. Run 'newgrp docker' or logout/login."; \
+			exit 1; \
+		fi; \
+		PID=$$!; \
+		echo $$PID > $(LOG_PID_FILE); \
+		sleep 1; \
+		if ps -p $$PID > /dev/null 2>&1; then \
+			echo "Log capture started (PID: $$PID)"; \
+		else \
+			echo "Warning: Log capture process exited immediately"; \
+			echo "  This may happen if no containers are running yet."; \
+			echo "  Logs will be captured on next 'make start'."; \
+			rm -f $(LOG_PID_FILE); \
+		fi; \
 	fi
 
 logs-stop:
-	@if [ -f $(LOG_PID_FILE) ] && kill -0 $$(cat $(LOG_PID_FILE)) 2>/dev/null; then \
-		kill $$(cat $(LOG_PID_FILE)) && rm -f $(LOG_PID_FILE) && echo "Log capture stopped"; \
+	@if [ -f $(LOG_PID_FILE) ]; then \
+		PID=$$(cat $(LOG_PID_FILE)); \
+		if ps -p $$PID > /dev/null 2>&1; then \
+			if kill $$PID 2>/dev/null; then \
+				rm -f $(LOG_PID_FILE); \
+				echo "Log capture stopped (PID: $$PID)"; \
+			elif sudo -n kill $$PID 2>/dev/null; then \
+				sudo -n rm -f $(LOG_PID_FILE) 2>/dev/null || rm -f $(LOG_PID_FILE) 2>/dev/null || true; \
+				echo "Log capture stopped (PID: $$PID, required sudo)"; \
+			else \
+				echo "Warning: Could not stop log capture (PID: $$PID)"; \
+				echo "  Process is owned by root. Try: sudo kill $$PID"; \
+			fi; \
+		else \
+			rm -f $(LOG_PID_FILE) 2>/dev/null || sudo -n rm -f $(LOG_PID_FILE) 2>/dev/null || true; \
+			echo "No log capture process running (stale PID file removed)"; \
+		fi; \
 	else \
-		rm -f $(LOG_PID_FILE); \
 		echo "No log capture process running"; \
 	fi
 
@@ -68,14 +108,14 @@ logs-clean:
 
 logs-cron-install:
 	@DKPROXY_DIR=$$(pwd) && \
-	(crontab -l 2>/dev/null | grep -v "dkproxy.*logs-rotate"; \
-	echo "0 0 * * * cd $$DKPROXY_DIR && make logs-rotate >> $$DKPROXY_DIR/logs/cron.log 2>&1") | crontab - && \
-	echo "Cron job installed: daily log rotation at midnight" && \
+	(crontab -l 2>/dev/null | grep -v "# dkproxy:$(PROXY_ALIAS)"; \
+	echo "0 0 * * * cd $$DKPROXY_DIR && make logs-rotate >> $$DKPROXY_DIR/logs/cron.log 2>&1 # dkproxy:$(PROXY_ALIAS)") | crontab - && \
+	echo "Cron job installed for $(PROXY_ALIAS): daily log rotation at midnight" && \
 	echo "View with: crontab -l"
 
 logs-cron-remove:
-	@crontab -l 2>/dev/null | grep -v "dkproxy.*logs-rotate" | crontab - && \
-	echo "Cron job removed"
+	@crontab -l 2>/dev/null | grep -v "# dkproxy:$(PROXY_ALIAS)" | crontab - && \
+	echo "Cron job removed for $(PROXY_ALIAS)"
 
 prepare:
 	echo "Adding the repository to Apt sources..."
@@ -87,27 +127,30 @@ p2:
 		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 build: down ensureitems
-	docker compose build --no-cache
+	@./run-docker.sh docker compose build --no-cache
 
 down: logs-stop
-	docker compose down --remove-orphans
+	@./run-docker.sh docker compose down --remove-orphans
 
 update: down pull build
-	echo "Proxy updated.  Bring it up with make up logs"
+	echo "Proxy updated.  Start it with: make start"
 
 up: down ensureitems logdirs
 	@# Generate versions.env from manifest if it exists
 	@if [ -f "version-manifest.yaml" ]; then \
-		python3 version-manager.py generate-env 2>/dev/null || true; \
+		if ! python3 version-manager.py generate-env 2>/dev/null; then \
+			echo "Warning: Failed to generate versions.env - using default versions"; \
+		fi; \
 	fi
 	@# Start services with version env if available
 	@if [ -f "versions.env" ]; then \
 		set -a && . ./versions.env && set +a && \
-		docker compose up -d; \
+		./run-docker.sh docker compose up -d; \
 	else \
-		docker compose up -d; \
+		./run-docker.sh docker compose up -d; \
 	fi
 	@echo "Starting background log capture..."
+	@sleep 3
 	@$(MAKE) logs-start
 
 download:
@@ -124,6 +167,10 @@ ensureitems:
 	touch cmd_exec/requirements.txt
 	-mkdir -p ./outpost/sidecar/pyrunner
 	-mkdir -p ./outpost/sidecar/statuses
+	-mkdir -p ./cmd_exec/logs
+	-mkdir -p ./outpost/logs
+	-mkdir -p ./outpost/jobs
+	-mkdir -p ./vault/data
 	-sudo chmod -R a+rw ./outpost/sidecar
 	-sudo chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner
 	-sudo chmod -R a+rwx cmd_exec/logs
@@ -157,6 +204,9 @@ status:
 help:
 	@echo "DagKnows Proxy Management Commands"
 	@echo "==================================="
+	@echo ""
+	@echo "Installation:"
+	@echo "  make install      - Run the installation wizard"
 	@echo ""
 	@echo "Service Management:"
 	@echo "  make up           - Start proxy services (+ auto log capture)"
@@ -196,6 +246,8 @@ help:
 	@echo "  make setup-autorestart   - Setup auto-start on system reboot"
 	@echo "  make disable-autorestart - Disable auto-start"
 	@echo "  make autorestart-status  - Check auto-restart configuration"
+	@echo "  make setup-log-rotation  - Setup daily log rotation"
+	@echo "  make setup-versioning    - Setup version tracking"
 
 # ==============================================
 # SMART START/STOP/RESTART (Auto-detects mode)
@@ -205,24 +257,28 @@ help:
 
 # Smart start: uses systemctl if auto-restart configured, otherwise traditional method
 start: stop logdirs
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
-		echo "Starting services via systemd (auto-restart mode)..."; \
-		sudo systemctl start dkproxy.service; \
+	@if [ -f $(SERVICE_FILE) ]; then \
+		echo "Starting services via systemd ($(SERVICE_NAME))..."; \
+		sudo systemctl start $(SERVICE_NAME); \
+		echo "Waiting for containers to initialize..."; \
+		sleep 15; \
 		$(MAKE) logs-start; \
 		echo "Done. Use 'make status' to check."; \
 	else \
 		echo "Starting services..."; \
-		docker network create saaslocalnetwork 2>/dev/null || true; \
 		if [ -f "version-manifest.yaml" ]; then \
-			python3 version-manager.py generate-env 2>/dev/null || true; \
+			if ! python3 version-manager.py generate-env 2>/dev/null; then \
+				echo "Warning: Failed to generate versions.env - using default versions"; \
+			fi; \
 		fi; \
 		if [ -f "versions.env" ]; then \
 			set -a && . ./versions.env && set +a && \
-			docker compose up -d; \
+			./run-docker.sh docker compose up -d; \
 		else \
-			docker compose up -d; \
+			./run-docker.sh docker compose up -d; \
 		fi; \
-		sleep 3; \
+		echo "Waiting for containers to initialize..."; \
+		sleep 15; \
 		$(MAKE) logs-start; \
 		echo "Services started."; \
 	fi
@@ -230,11 +286,16 @@ start: stop logdirs
 # Smart stop: stops all services and log capture
 stop: logs-stop
 	@echo "Stopping all services..."
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
-		sudo systemctl stop dkproxy.service 2>/dev/null || true; \
+	@if [ -f $(SERVICE_FILE) ]; then \
+		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
-	@docker compose down 2>/dev/null || true
-	@echo "All services stopped."
+	@if ./run-docker.sh docker compose down; then \
+		echo "All services stopped."; \
+	else \
+		echo "Warning: docker compose down failed - containers may still be running"; \
+		echo "  Try: docker ps  (to see running containers)"; \
+		echo "  Try: make down  (from the dkproxy directory)"; \
+	fi
 
 # Smart restart
 restart: stop start
@@ -243,51 +304,49 @@ restart: stop start
 # AUTO-RESTART CONFIGURATION
 # ==============================================
 
+# Interactive auto-restart setup script (requires sudo)
 setup-autorestart:
-	@echo "Setting up auto-restart on system reboot..."
-	@if [ ! -f dkproxy.service ]; then \
-		echo "ERROR: dkproxy.service not found"; \
-		exit 1; \
-	fi
-	@if [ ! -f dkproxy-startup.sh ]; then \
-		echo "ERROR: dkproxy-startup.sh not found"; \
-		exit 1; \
-	fi
-	@INSTALL_DIR=$$(pwd) && \
-	sudo cp dkproxy.service /etc/systemd/system/dkproxy.service && \
-	sudo sed -i "s|/opt/dkproxy|$$INSTALL_DIR|g" /etc/systemd/system/dkproxy.service && \
-	sudo chmod +x $$INSTALL_DIR/dkproxy-startup.sh && \
-	sudo sed -i "s|DKPROXY_DIR:-/opt/dkproxy|DKPROXY_DIR:-$$INSTALL_DIR|g" $$INSTALL_DIR/dkproxy-startup.sh && \
-	sudo systemctl daemon-reload && \
-	sudo systemctl enable dkproxy.service && \
-	echo "" && \
-	echo "Auto-restart configured successfully!" && \
-	echo "  - Services will start automatically on system boot" && \
-	echo "  - Log capture will start automatically" && \
-	echo "" && \
-	echo "Commands:" && \
-	echo "  make start   - Start services now" && \
-	echo "  make stop    - Stop services" && \
-	echo "  make status  - Check status"
+	@sudo bash setup-autorestart.sh
 
 disable-autorestart:
-	@echo "Disabling auto-restart..."
-	@sudo systemctl stop dkproxy.service 2>/dev/null || true
-	@sudo systemctl disable dkproxy.service 2>/dev/null || true
-	@sudo rm -f /etc/systemd/system/dkproxy.service
+	@echo "Disabling auto-restart for $(SERVICE_NAME)..."
+	@echo "Stopping containers to prevent restart on reboot..."
+	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || ./run-docker.sh docker compose down 2>/dev/null || true
+	@sudo systemctl disable $(SERVICE_NAME) 2>/dev/null || true
+	@sudo rm -f $(SERVICE_FILE)
 	@sudo systemctl daemon-reload
-	@echo "Auto-restart disabled."
+	@echo "Auto-restart disabled and containers stopped."
+	@echo "Use 'make start' to start containers again."
 
 autorestart-status:
 	@echo "=== Auto-Restart Status ==="
-	@if [ -f /etc/systemd/system/dkproxy.service ]; then \
+	@echo "Service name: $(SERVICE_NAME)"
+	@if [ -f $(SERVICE_FILE) ]; then \
 		echo "Systemd service: INSTALLED"; \
-		systemctl is-enabled dkproxy.service 2>/dev/null && echo "Service enabled: YES" || echo "Service enabled: NO"; \
-		systemctl is-active dkproxy.service 2>/dev/null && echo "Service active: YES" || echo "Service active: NO"; \
+		systemctl is-enabled $(SERVICE_NAME) 2>/dev/null && echo "Service enabled: YES" || echo "Service enabled: NO"; \
+		systemctl is-active $(SERVICE_NAME) 2>/dev/null && echo "Service active: YES" || echo "Service active: NO"; \
 	else \
 		echo "Systemd service: NOT INSTALLED"; \
 		echo "Run 'make setup-autorestart' to enable"; \
 	fi
+
+# ============================================
+# STANDALONE SETUP SCRIPTS (for partial upgrades)
+# ============================================
+
+.PHONY: install setup-log-rotation setup-versioning
+
+# Interactive installation wizard
+install:
+	@python3 install.py
+
+# Interactive log rotation setup script
+setup-log-rotation:
+	@bash setup-log-rotation.sh
+
+# Interactive versioning setup script
+setup-versioning:
+	@bash setup-versioning.sh
 
 # ============================================
 # VERSION MANAGEMENT

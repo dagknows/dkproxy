@@ -56,6 +56,9 @@ SERVICE_TO_COMPOSE = {
 DEFAULT_REGISTRY = 'public.ecr.aws/n5k3t9x2'
 HISTORY_LIMIT = 5
 
+# Global flag to track if we need sg docker wrapper
+USE_SG_DOCKER = False
+
 
 # ============================================
 # COLORS AND OUTPUT
@@ -146,6 +149,56 @@ def confirm(prompt: str, default: bool = False) -> bool:
     return response in ('yes', 'y')
 
 
+def check_docker_access() -> bool:
+    """
+    Check if Docker is accessible. Automatically tries sg docker if needed.
+    Sets global USE_SG_DOCKER flag for other functions to use.
+    Returns True if Docker is accessible (directly or via sg), False otherwise.
+    """
+    global USE_SG_DOCKER
+
+    # First check if Docker daemon is running
+    daemon_running, _ = run_command(
+        "systemctl is-active docker 2>/dev/null || pgrep -x dockerd > /dev/null"
+    )
+
+    # Check if user can access Docker directly
+    can_access, _ = run_command("docker ps 2>&1")
+
+    if can_access:
+        USE_SG_DOCKER = False
+        return True
+
+    if daemon_running:
+        # Docker is running but user can't access - try sg docker
+        can_access_sg, _ = run_command("sg docker -c 'docker ps' 2>&1")
+        if can_access_sg:
+            USE_SG_DOCKER = True
+            print_info("Using 'sg docker' for Docker commands (docker group not active in session)")
+            return True
+        else:
+            # Even sg docker didn't work
+            print_error("Docker is running but you don't have permission to access it")
+            print_info("Make sure your user is in the docker group: sudo usermod -aG docker $USER")
+            print_info("Then log out and back in, or run: newgrp docker")
+            return False
+    else:
+        # Docker daemon not running
+        print_error("Docker daemon is not running")
+        print_info("Start Docker with: sudo systemctl start docker")
+        return False
+
+
+def docker_command(cmd: str) -> str:
+    """Wrap a docker command with sg docker if needed."""
+    global USE_SG_DOCKER
+    if USE_SG_DOCKER:
+        # Escape single quotes in the command
+        escaped_cmd = cmd.replace("'", "'\\''")
+        return f"sg docker -c '{escaped_cmd}'"
+    return cmd
+
+
 # ============================================
 # DOCKER HELPER FUNCTIONS
 # ============================================
@@ -154,13 +207,13 @@ def clear_stale_ecr_credentials(registry: str) -> bool:
     """
     Clear stale Docker credentials for public ECR.
     This is needed when Docker has cached an expired token.
-    
+
     Returns:
         True if logout was attempted, False otherwise
     """
     if 'public.ecr.aws' in registry:
         print_info("Clearing stale Docker credentials for public.ecr.aws...")
-        run_command("docker logout public.ecr.aws 2>&1", capture=False)
+        run_command(docker_command("docker logout public.ecr.aws") + " 2>&1", capture=False)
         return True
     return False
 
@@ -168,16 +221,18 @@ def clear_stale_ecr_credentials(registry: str) -> bool:
 def docker_pull_with_retry(image: str, max_retries: int = 2) -> Tuple[bool, str]:
     """
     Pull a Docker image with automatic retry on expired token errors.
-    
+    Uses sg docker wrapper if needed.
+
     Args:
         image: Full image name (e.g., 'public.ecr.aws/n5k3t9x2/outpost:latest')
         max_retries: Maximum number of retries
-        
+
     Returns:
         Tuple of (success, output)
     """
     for attempt in range(max_retries):
-        success, output = run_command(f"docker pull {image}")
+        cmd = docker_command(f"docker pull {image}")
+        success, output = run_command(cmd)
         
         if success:
             return True, output
@@ -478,7 +533,7 @@ class VersionManager:
             self.update_service_version(service, tag)
             self.save_manifest()
             self.generate_env()
-            print_info("Run 'make down && make up' to apply changes")
+            print_info("Run 'make restart' to apply changes")
         else:
             print_error(f"Failed to pull {service}:{tag}")
             if output:
@@ -567,7 +622,7 @@ class VersionManager:
             print_info("Configure AWS CLI for tag resolution, or run: make resolve-tags")
 
         print()
-        print_info("Run 'make down && make up' to apply changes")
+        print_info("Run 'make restart' to apply changes")
         return True
 
     # ==================
@@ -639,7 +694,7 @@ class VersionManager:
             self.save_manifest()
             self.generate_env()
             print_success(f"\nRolled back {success_count} service(s)")
-            print_info("Run 'make up' to apply changes")
+            print_info("Run 'make start' to apply changes")
             return True
         else:
             print_error("Rollback failed")
@@ -688,7 +743,7 @@ class VersionManager:
         self.generate_env()
 
         print_success(f"Set {service} to {tag}")
-        print_info("Run 'make up' to apply changes")
+        print_info("Run 'make start' to apply changes")
         return True
 
     def update_safe(self):
@@ -747,12 +802,12 @@ class VersionManager:
 
         # Step 5: Stop services
         print_info("Stopping services...")
-        run_command("docker compose down")
+        run_command("make stop")
         print_success("Services stopped")
 
         # Step 6: Start services
         print_info("Starting services with new images...")
-        success, _ = run_command("make up", capture=False)
+        success, _ = run_command("make start", capture=False)
         if not success:
             print_error("Failed to start services")
             return False
@@ -1112,6 +1167,14 @@ Examples:
     # Change to script directory
     script_dir = Path(__file__).parent.absolute()
     os.chdir(script_dir)
+
+    # Commands that require Docker access
+    docker_commands = {'pull', 'pull-from-manifest', 'pull-latest', 'rollback', 'update-safe'}
+
+    # Check Docker access for commands that need it
+    if args.command in docker_commands:
+        if not check_docker_access():
+            sys.exit(1)
 
     vm = VersionManager()
 

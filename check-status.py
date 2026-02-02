@@ -2,18 +2,25 @@
 """
 DagKnows Proxy Status Checker
 Verifies that the proxy installation is working correctly
+
+Automatically handles docker group permission issues by using 'sg docker'
+if the docker group is not active in the current session.
 """
 
 import os
 import sys
 import subprocess
 import json
+from typing import Tuple
 
 try:
     import yaml
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
+
+# Global flag to track if we need sg docker wrapper
+USE_SG_DOCKER = False
 
 # ANSI color codes
 class Colors:
@@ -28,6 +35,69 @@ def print_header(text):
     print(f"\n{Colors.BOLD}{'='*60}{Colors.ENDC}")
     print(f"{Colors.BOLD}{text:^60}{Colors.ENDC}")
     print(f"{Colors.BOLD}{'='*60}{Colors.ENDC}\n")
+
+
+def run_command(cmd: str) -> Tuple[bool, str]:
+    """Run a shell command and return success status and output"""
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True, timeout=60
+        )
+        return result.returncode == 0, result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        return False, "Command timed out"
+    except Exception as e:
+        return False, str(e)
+
+
+def check_docker_access() -> bool:
+    """
+    Check if Docker is accessible. Automatically tries sg docker if needed.
+    Sets global USE_SG_DOCKER flag for other functions to use.
+    Returns True if Docker is accessible (directly or via sg), False otherwise.
+    """
+    global USE_SG_DOCKER
+
+    # First check if Docker daemon is running
+    daemon_running, _ = run_command(
+        "systemctl is-active docker 2>/dev/null || pgrep -x dockerd > /dev/null"
+    )
+
+    # Check if user can access Docker directly
+    can_access, _ = run_command("docker ps 2>&1")
+
+    if can_access:
+        USE_SG_DOCKER = False
+        return True
+
+    if daemon_running:
+        # Docker is running but user can't access - try sg docker
+        can_access_sg, _ = run_command("sg docker -c 'docker ps' 2>&1")
+        if can_access_sg:
+            USE_SG_DOCKER = True
+            print(f"  {Colors.WARNING}Using 'sg docker' (docker group not active){Colors.ENDC}")
+            return True
+        else:
+            # Even sg docker didn't work
+            print(f"  {Colors.FAIL}Docker permission denied{Colors.ENDC}")
+            print(f"  Make sure you're in docker group: sudo usermod -aG docker $USER")
+            print(f"  Then: newgrp docker (or logout/login)")
+            return False
+    else:
+        # Docker daemon not running
+        print(f"  {Colors.FAIL}Docker daemon not running{Colors.ENDC}")
+        print(f"  Start with: sudo systemctl start docker")
+        return False
+
+
+def docker_command(cmd: str) -> str:
+    """Wrap a docker command with sg docker if needed."""
+    global USE_SG_DOCKER
+    if USE_SG_DOCKER:
+        # Escape single quotes in the command
+        escaped_cmd = cmd.replace("'", "'\\''")
+        return f"sg docker -c '{escaped_cmd}'"
+    return cmd
 
 
 def check_versions():
@@ -77,14 +147,15 @@ def check_containers():
     """Check proxy container status"""
     print_header("Container Status")
 
+    cmd = docker_command("docker compose ps --format json")
     result = subprocess.run(
-        "docker compose ps --format json",
+        cmd,
         shell=True, capture_output=True, text=True
     )
 
     if result.returncode != 0 or not result.stdout.strip():
         print(f"  {Colors.FAIL}No containers running{Colors.ENDC}")
-        print(f"  Run: make up")
+        print(f"  Run: make start")
         return False
 
     # Load versions
@@ -121,6 +192,10 @@ def main():
     # Change to script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
+
+    # Check Docker access (sets USE_SG_DOCKER if needed)
+    if not check_docker_access():
+        sys.exit(1)
 
     checks = {}
     checks['containers'] = check_containers()

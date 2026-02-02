@@ -2,6 +2,9 @@
 """
 DagKnows Proxy Installation Wizard
 Automates the installation process for DagKnows Proxy on docker-compose setups
+
+Usage:
+    make install
 """
 
 import os
@@ -62,6 +65,137 @@ def check_python_venv_available():
         result = run_command("python3 -m venv --help > /dev/null 2>&1", check=False)
         return result
     except Exception:
+        return False
+
+def offer_log_rotation_setup():
+    """Set up log rotation after proxy is running (automatic, no prompt)"""
+    print()
+    print(f"{Colors.BOLD}Log Rotation Setup{Colors.ENDC}")
+    print_info("Setting up automatic log rotation:")
+    print("  • Compresses logs older than 3 days")
+    print("  • Deletes logs older than 7 days")
+    print("  • Runs daily at midnight via cron")
+    print()
+
+    # Check if already configured for THIS proxy (using PROXY_ALIAS tag)
+    try:
+        proxy_alias = get_proxy_alias()
+        result = run_command(f"crontab -l 2>/dev/null | grep -q '# dkproxy:{proxy_alias}'", check=False)
+        if result:
+            print_success(f"Log rotation is already configured for {proxy_alias}")
+            return True
+    except Exception:
+        pass
+
+    print_info("Installing log rotation cron job...")
+    try:
+        if run_command("make logs-cron-install", check=False):
+            print_success("Log rotation cron job installed!")
+            return True
+        else:
+            print_warning("Failed to install cron job")
+            print_info("You can try later with: make logs-cron-install")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up log rotation: {e}")
+        print_info("You can try later with: make logs-cron-install")
+        return False
+
+def get_proxy_alias():
+    """Get PROXY_ALIAS from .env file, fallback to parent directory"""
+    env_file = os.path.join(os.getcwd(), '.env')
+    if os.path.exists(env_file):
+        try:
+            with open(env_file) as f:
+                for line in f:
+                    if line.startswith('PROXY_ALIAS='):
+                        value = line.split('=', 1)[1].strip()
+                        # Remove quotes if present
+                        return value.strip('"').strip("'")
+        except Exception:
+            pass
+    # Fallback to parent directory
+    current_dir = os.path.abspath(os.getcwd())
+    return os.path.basename(os.path.dirname(current_dir))
+
+def get_service_name():
+    """Get the unique service name based on PROXY_ALIAS"""
+    # e.g., PROXY_ALIAS=freshproxy15 -> dkproxy-freshproxy15.service
+    return f"dkproxy-{get_proxy_alias()}.service"
+
+def get_service_file():
+    """Get the path to this installation's systemd service file"""
+    return f"/etc/systemd/system/{get_service_name()}"
+
+def offer_autorestart_setup():
+    """Set up auto-restart after proxy is running (automatic, no prompt)"""
+    print()
+    print(f"{Colors.BOLD}Auto-Restart Setup{Colors.ENDC}")
+    print_info("Setting up auto-restart on system boot...")
+    print_warning("Note: This requires sudo privileges")
+    print()
+
+    # Check if already configured (check for this installation's unique service file)
+    service_file = get_service_file()
+    if os.path.exists(service_file):
+        print_success(f"Auto-restart is already configured ({get_service_name()})")
+        return True
+
+    print_info("Installing systemd service...")
+    try:
+        if run_command("make setup-autorestart", check=False):
+            print_success(f"Auto-restart configured! Service: {get_service_name()}")
+            return True
+        else:
+            print_warning("Failed to set up auto-restart")
+            print_info("You can try later with: make setup-autorestart")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up auto-restart: {e}")
+        print_info("You can try later with: make setup-autorestart")
+        return False
+
+def offer_versioning_setup(use_sg=False):
+    """Set up version tracking after proxy is running (automatic, no prompt)"""
+    print()
+    print(f"{Colors.BOLD}Version Management Setup{Colors.ENDC}")
+    print_info("Setting up version management:")
+    print("  - Pins Docker images to specific versions")
+    print("  - Enables reproducible deployments")
+    print("  - Supports easy rollback if updates cause issues")
+    print()
+    print_warning("NOTE: AWS CLI must be configured to fetch latest ECR image tags.")
+    print_warning("      Run 'aws configure' if you haven't set up AWS credentials.")
+    print()
+
+    # Check if already configured
+    if os.path.exists('version-manifest.yaml'):
+        print_success("Version management is already configured")
+        return True
+
+    print_info("Installing version management...")
+    try:
+        # Use sg docker if docker group not active in current session
+        migrate_cmd = "sg docker -c 'make migrate-versions'" if use_sg else "make migrate-versions"
+        if run_command(migrate_cmd, check=False):
+            print_success("Version management configured!")
+            # Restart proxy to apply versions.env
+            print_info("Restarting proxy to apply version configuration...")
+            restart_cmd = "sg docker -c 'make start'" if use_sg else "make start"
+            if run_command(restart_cmd, check=False):
+                print_success("Proxy restarted with version tracking enabled")
+            else:
+                print_warning("Could not restart proxy automatically")
+                print_info("Run 'make start' to apply version configuration")
+            return True
+        else:
+            print_warning("Failed to set up version management")
+            print_info("This may be due to AWS CLI not being configured.")
+            print_info("You can try later with: make setup-versioning")
+            return False
+    except Exception as e:
+        print_warning(f"Could not set up version management: {e}")
+        print_info("You can try later with: make setup-versioning")
         return False
 
 def check_pip_available():
@@ -267,13 +401,8 @@ def setup_virtual_environment():
         except Exception:
             print_warning("Could not check dagknows CLI version")
         
-        # Ask if user wants to reinstall
-        response = input(f"{Colors.BOLD}Do you want to reinstall dagknows CLI? (yes/no) [no]: {Colors.ENDC}").strip().lower()
-        if response not in ['yes', 'y']:
-            print_info("Keeping existing dagknows CLI installation")
-            return True
-        
-        print_info("Reinstalling dagknows CLI...")
+        # Always reinstall to ensure latest version with bug fixes and new features
+        print_info("Reinstalling dagknows CLI to ensure latest version...")
     else:
         print_info("dagknows CLI not found in virtual environment")
         print_info("Installing dagknows CLI (this may take a moment)...")
@@ -607,20 +736,48 @@ def start_proxy(use_sg=False):
         print_info("  4. cat .env (verify it has content)")
         return False
     
-    print_info("Running 'make up logs'...")
-    print_info("This will start the proxy containers and show logs")
-    print_info("Press Ctrl+C to stop viewing logs (proxy will keep running)")
+    print_info("Running 'make start'...")
+    print_info("This will start the proxy containers")
     print()
-    
-    # Use sg docker if needed
+
+    # Use sg docker if needed - run 'make start' only (not logs, which blocks forever)
     if use_sg:
-        cmd = "sg docker -c 'make up logs'"
+        cmd = "sg docker -c 'make start'"
     else:
-        cmd = "make up logs"
-    
+        cmd = "make start"
+
     try:
         subprocess.run(cmd, shell=True, check=True)
         print_success("Proxy services started successfully")
+        print()
+
+        # Give containers time to initialize before proceeding
+        print_info("Waiting for proxy to initialize...")
+        time.sleep(8)
+        print_success("Proxy is ready")
+
+        # Verify log capture is running
+        log_pid_file = os.path.join(os.getcwd(), 'logs', '.capture.pid')
+        if os.path.exists(log_pid_file):
+            try:
+                with open(log_pid_file) as f:
+                    pid = int(f.read().strip())
+                # Check if process is running using ps -p (works regardless of owner)
+                result = subprocess.run(['ps', '-p', str(pid)], capture_output=True)
+                if result.returncode == 0:
+                    print_success(f"Background log capture running (PID: {pid})")
+                else:
+                    print_warning("Background log capture not running (stale PID file)")
+                    print_info("  It will start automatically on next 'make start'")
+            except (ValueError, OSError):
+                print_warning("Background log capture may not be running")
+                print_info("  You can start it manually with: make logs-start")
+        else:
+            print_warning("Background log capture may not be running")
+            print_info("  You can start it manually with: make logs-start")
+
+        print()
+        print_info("View logs anytime with: make logs")
         return True
     except subprocess.CalledProcessError:
         print_error("Failed to start proxy services")
@@ -629,12 +786,28 @@ def start_proxy(use_sg=False):
         print_info("  1. Check .env file has all required variables")
         print_info("  2. Verify proxy was created: source ~/dkenv/bin/activate && dk proxy list")
         print_info("  3. Regenerate env: dk proxy getenv <proxy_name>")
-        print_info("  4. Try manually: make up logs")
+        print_info("  4. Try manually: make start")
         return False
     except KeyboardInterrupt:
-        print_info("\nLogs stopped by user")
-        print_success("Proxy is running in the background")
-        return True
+        print_info("\nStartup interrupted by user")
+        return False
+
+def get_running_proxy_containers():
+    """Check if any proxy-related containers are running and return their details."""
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Status}}\t{{.Image}}"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            containers = []
+            for line in result.stdout.strip().split('\n'):
+                if line and any(x in line.lower() for x in ['outpost', 'cmd-exec', 'vault', 'cmd_exec']):
+                    containers.append(line)
+            return containers
+    except Exception:
+        pass
+    return []
 
 def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     """Print final success message and instructions"""
@@ -664,7 +837,8 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
         else:
             print(f"  3. Get environment variables: {Colors.OKCYAN}dk proxy getenv <proxy_name>{Colors.ENDC}")
         print(f"  4. Verify .env file has content: {Colors.OKCYAN}cat .env{Colors.ENDC}")
-        print(f"  5. Start proxy: {Colors.OKCYAN}make up logs{Colors.ENDC}")
+        print(f"  5. Start proxy: {Colors.OKCYAN}make start{Colors.ENDC}")
+        print(f"  6. View logs: {Colors.OKCYAN}make logs{Colors.ENDC}")
         print()
     
     if used_sg:
@@ -674,7 +848,7 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
         print()
         print(f"{Colors.BOLD}Option 1 (Recommended): Activate for current session{Colors.ENDC}")
         print(f"  {Colors.OKCYAN}newgrp docker{Colors.ENDC}")
-        print("  Then run commands normally: make logs, make down, etc.")
+        print("  Then run commands normally: make logs, make stop, etc.")
         print()
         print(f"{Colors.BOLD}Option 2: Log out and back in{Colors.ENDC}")
         print("  The docker group will be active in all new sessions")
@@ -685,11 +859,17 @@ def print_final_instructions(proxy_name, used_sg=False, proxy_started=True):
     
     print(f"{Colors.BOLD}Useful commands:{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}make logs{Colors.ENDC}        - View proxy logs")
-    print(f"  {Colors.OKBLUE}make down{Colors.ENDC}        - Stop proxy services")
-    print(f"  {Colors.OKBLUE}make up{Colors.ENDC}          - Start proxy services")
+    print(f"  {Colors.OKBLUE}make stop{Colors.ENDC}        - Stop proxy services")
+    print(f"  {Colors.OKBLUE}make start{Colors.ENDC}       - Start proxy services")
     print(f"  {Colors.OKBLUE}make update{Colors.ENDC}      - Update proxy to latest version")
     print()
-    
+
+    print(f"{Colors.BOLD}Optional Setup Commands:{Colors.ENDC}")
+    print(f"  {Colors.OKBLUE}make setup-autorestart{Colors.ENDC}   - Auto-start on system reboot")
+    print(f"  {Colors.OKBLUE}make setup-log-rotation{Colors.ENDC}  - Daily log rotation")
+    print(f"  {Colors.OKBLUE}make setup-versioning{Colors.ENDC}    - Enable version tracking")
+    print()
+
     print(f"{Colors.BOLD}DagKnows CLI commands (activate venv first):{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}source ~/dkenv/bin/activate{Colors.ENDC}")
     print(f"  {Colors.OKBLUE}dk version{Colors.ENDC}       - Check CLI version")
@@ -745,41 +925,49 @@ def main():
     
     # Check current installation state
     state = check_installation_state()
-    
-    # Handle resume scenarios
-    if state['proxy_running']:
-        print_header("Existing Installation Detected")
-        print_success("Proxy services are already running!")
-        
-        if state['proxy_name']:
-            print_info(f"Detected proxy: {state['proxy_name']}")
-        
+
+    # Check for running proxy containers (from any proxy installation)
+    running_containers = get_running_proxy_containers()
+
+    if running_containers:
+        # Proxy containers are running - show them and ask for confirmation
         print()
-        print(f"{Colors.BOLD}Your DagKnows Proxy installation appears to be complete.{Colors.ENDC}")
+        print(f"{Colors.WARNING}{Colors.BOLD}⚠  WARNING: Proxy containers are already running:{Colors.ENDC}")
+        print("-" * 70)
+        print(f"{Colors.BOLD}{'CONTAINER NAME':<35} {'STATUS':<20} {'IMAGE'}{Colors.ENDC}")
+        print("-" * 70)
+        for container in running_containers:
+            parts = container.split('\t')
+            if len(parts) >= 3:
+                print(f"{parts[0]:<35} {parts[1]:<20} {parts[2]}")
+            elif len(parts) == 2:
+                print(f"{parts[0]:<35} {parts[1]:<20}")
+            else:
+                print(f"{container}")
+        print("-" * 70)
         print()
-        print("Available actions:")
-        print("  1. View logs: make logs")
-        print("  2. Stop proxy: make down")
-        print("  3. Update proxy: make update")
+        print_warning("Running the install wizard may affect these containers.")
         print()
-        response = input(f"{Colors.BOLD}Do you want to reinstall anyway? (yes/no) [no]: {Colors.ENDC}").strip().lower()
+        print("Available actions for existing proxies:")
+        print("  • View logs: make logs")
+        print("  • Stop proxy: make stop")
+        print("  • Update proxy: make update")
+        print()
+
+        response = input(f"{Colors.BOLD}Do you want to continue with installation? (yes/no) [no]: {Colors.ENDC}").strip().lower()
         if response not in ['yes', 'y']:
-            print_info("Installation skipped. Proxy is already running.")
+            print_info("Installation cancelled.")
             sys.exit(0)
-    
-    # Confirmation for install
-    print_warning("This script will:")
+
+    # Show what the wizard will do (no confirmation needed for fresh installs)
+    print()
+    print_info("This wizard will:")
     print("  1. Install system dependencies (Docker, make, Python venv, etc.)")
     print("  2. Setup Python virtual environment at ~/dkenv")
     print("  3. Install and configure DagKnows CLI")
     print("  4. Create and configure a proxy")
     print("  5. Pull Docker images and start proxy services")
     print()
-    
-    response = input(f"{Colors.BOLD}Do you want to continue? (yes/no): {Colors.ENDC}").strip().lower()
-    if response not in ['yes', 'y']:
-        print_info("Installation cancelled by user")
-        sys.exit(0)
     
     try:
         # Pre-flight checks
@@ -860,7 +1048,28 @@ def main():
         
         # Start proxy
         proxy_started = start_proxy(use_sg)
-        
+
+        # Offer optional post-installation setup if proxy started successfully
+        if proxy_started:
+            print()
+            print_header("Optional Features Setup")
+            print_info("These features are optional but recommended for production use.")
+            print()
+
+            # Offer log rotation setup (default yes, recommended)
+            offer_log_rotation_setup()
+
+            # Offer auto-restart setup (default yes, requires sudo)
+            offer_autorestart_setup()
+
+            # Wait for containers to fully initialize after auto-restart setup
+            # This ensures containers are ready for version detection
+            print_info("Waiting for containers to fully initialize...")
+            time.sleep(15)
+
+            # Offer version management setup (default yes, pins current image versions)
+            offer_versioning_setup(use_sg)
+
         # Show final instructions (even if proxy didn't start, so user knows what to do)
         print_final_instructions(proxy_name, use_sg, proxy_started)
         

@@ -6,7 +6,17 @@ set -e
 
 # Configuration - these are set during setup-autorestart installation
 DKPROXY_DIR="${DKPROXY_DIR:-/opt/dkproxy}"
-LOG_FILE="/var/log/dkproxy-startup.log"
+
+# Derive unique log file name from PROXY_ALIAS in .env
+# e.g., PROXY_ALIAS=freshproxy15 -> /var/log/dkproxy-startup-freshproxy15.log
+if [ -f "$DKPROXY_DIR/.env" ]; then
+    PROXY_ALIAS=$(grep -E "^PROXY_ALIAS=" "$DKPROXY_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || true)
+fi
+if [ -z "$PROXY_ALIAS" ]; then
+    # Fallback to parent directory if no PROXY_ALIAS
+    PROXY_ALIAS=$(basename "$(dirname "$DKPROXY_DIR")")
+fi
+LOG_FILE="/var/log/dkproxy-startup-${PROXY_ALIAS}.log"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
@@ -16,12 +26,30 @@ log "Starting DagKnows Proxy services"
 
 cd "$DKPROXY_DIR"
 
-# Ensure network exists
-docker network create saaslocalnetwork 2>/dev/null || true
+# Network is created automatically by Docker Compose with named network config
+
+# Ensure required directories exist with correct permissions (like ensureitems target)
+log "Ensuring required directories and permissions..."
+touch outpost/requirements.txt 2>/dev/null || true
+touch cmd_exec/requirements.txt 2>/dev/null || true
+mkdir -p ./outpost/sidecar/pyrunner
+mkdir -p ./outpost/sidecar/statuses
+mkdir -p ./cmd_exec/logs
+mkdir -p ./outpost/logs
+mkdir -p ./outpost/jobs
+mkdir -p ./vault/data
+chmod -R a+rw ./outpost/sidecar 2>/dev/null || true
+chmod a+rx ./outpost/sidecar ./outpost/sidecar/statuses ./outpost/sidecar/pyrunner 2>/dev/null || true
+chmod -R a+rwx ./cmd_exec/logs 2>/dev/null || true
+chmod -R a+rwx ./outpost/logs 2>/dev/null || true
+chmod -R a+rwx ./outpost/jobs 2>/dev/null || true
+chmod -R a+rwx ./vault/data 2>/dev/null || true
 
 # Generate versions.env from manifest if it exists
 if [ -f "$DKPROXY_DIR/version-manifest.yaml" ]; then
-    python3 "$DKPROXY_DIR/version-manager.py" generate-env 2>/dev/null || true
+    if ! python3 "$DKPROXY_DIR/version-manager.py" generate-env 2>/dev/null; then
+        log "Warning: Failed to generate versions.env - using default versions"
+    fi
 fi
 
 # Load versions.env if available
@@ -37,9 +65,9 @@ if ! docker compose up -d; then
     exit 1
 fi
 
-# Wait for containers to stabilize
+# Wait for containers to stabilize (15s to ensure all services are ready)
 log "Waiting for containers to stabilize..."
-sleep 3
+sleep 15
 
 # Start background log capture
 LOG_CAPTURE_DIR="$DKPROXY_DIR/logs"
@@ -54,11 +82,20 @@ if [ -d "$DKPROXY_DIR" ]; then
     fi
 fi
 
-if [ ! -f "$LOG_PID_FILE" ] || ! kill -0 $(cat "$LOG_PID_FILE") 2>/dev/null; then
+if [ ! -f "$LOG_PID_FILE" ] || ! ps -p $(cat "$LOG_PID_FILE") > /dev/null 2>&1; then
     log "Starting background log capture"
     nohup docker compose logs -f >> "$LOG_CAPTURE_DIR/$(date +%Y-%m-%d).log" 2>&1 &
-    echo $! > "$LOG_PID_FILE"
-    log "Log capture started (PID: $!)"
+    LOG_PID=$!
+    echo $LOG_PID > "$LOG_PID_FILE"
+
+    # Verify log capture process is still running after a brief delay
+    sleep 1
+    if ps -p $LOG_PID > /dev/null 2>&1; then
+        log "Log capture started (PID: $LOG_PID)"
+    else
+        log "Warning: Log capture process exited immediately - containers may still be initializing"
+        rm -f "$LOG_PID_FILE"
+    fi
 else
     log "Log capture already running (PID: $(cat "$LOG_PID_FILE"))"
 fi
