@@ -199,6 +199,51 @@ def docker_pull_with_retry(image: str, max_retries: int = 2) -> Tuple[bool, str]
 
 
 # ============================================
+# DOCKER ACCESS CHECK
+# ============================================
+
+def check_docker_access() -> bool:
+    """
+    Check if Docker is accessible. Returns True if accessible, False otherwise.
+    Prints helpful error messages if not accessible.
+    """
+    # First check if Docker daemon is running (doesn't require docker group)
+    daemon_running, _ = run_command(
+        "systemctl is-active docker 2>/dev/null || pgrep -x dockerd > /dev/null"
+    )
+
+    # Then check if user can access Docker
+    can_access, output = run_command("docker ps 2>&1")
+
+    if can_access:
+        return True
+
+    if daemon_running:
+        # Docker is running but user can't access - permission issue
+        print_error("Docker is running but you don't have permission to access it")
+        print()
+        print_info("Your user was added to the docker group, but the group isn't active yet.")
+        print_info("To fix this, choose one of these options:")
+        print()
+        print(f"  {Colors.BOLD}Option 1 (Recommended):{Colors.ENDC} Activate for current session")
+        print(f"    {Colors.OKBLUE}newgrp docker{Colors.ENDC}")
+        print(f"    Then run your command again.")
+        print()
+        print(f"  {Colors.BOLD}Option 2:{Colors.ENDC} Log out and back in")
+        print(f"    The docker group will be active in all new sessions")
+        print()
+        print(f"  {Colors.BOLD}Option 3:{Colors.ENDC} Prefix each command")
+        print(f"    {Colors.OKBLUE}sg docker -c 'make pull-latest'{Colors.ENDC}")
+        print()
+        return False
+    else:
+        # Docker daemon not running
+        print_error("Docker daemon is not running")
+        print_info("Start Docker with: sudo systemctl start docker")
+        return False
+
+
+# ============================================
 # ECR TAG RESOLUTION
 # ============================================
 
@@ -1114,6 +1159,14 @@ Examples:
     os.chdir(script_dir)
 
     vm = VersionManager()
+
+    # Commands that require Docker access
+    docker_commands = {'pull', 'pull-from-manifest', 'pull-latest', 'rollback', 'update-safe'}
+
+    # Check Docker access for commands that need it
+    if args.command in docker_commands:
+        if not check_docker_access():
+            sys.exit(1)
 
     if args.command == 'show':
         vm.show()
