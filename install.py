@@ -1059,6 +1059,11 @@ def main():
             # Offer auto-restart setup (default yes, requires sudo)
             offer_autorestart_setup()
 
+            # Wait for containers to fully initialize after auto-restart setup
+            # This ensures containers are ready for version detection
+            print_info("Waiting for containers to fully initialize...")
+            time.sleep(15)
+
             # Offer version management setup (default yes, pins current image versions)
             offer_versioning_setup()
 
