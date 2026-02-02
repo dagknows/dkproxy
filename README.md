@@ -142,6 +142,17 @@ This creates a version manifest that:
 - Enables version pinning and rollback
 - Supports safe updates with `make update-safe`
 
+## Documentation
+
+For detailed information on specific features, see these guides:
+
+| Guide | Description |
+|-------|-------------|
+| [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) | Comprehensive installation and setup guide |
+| [LOGGING.md](LOGGING.md) | Log management, rotation, and troubleshooting |
+| [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) | Docker image versioning, updates, and rollback |
+| [AUTORESTART.md](AUTORESTART.md) | Auto-start on system boot with multi-proxy support |
+
 ## All Available Commands
 
 Run `make help` to see all available commands:
