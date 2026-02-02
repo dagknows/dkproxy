@@ -155,7 +155,7 @@ def offer_autorestart_setup():
         print_info("You can try later with: make setup-autorestart")
         return False
 
-def offer_versioning_setup():
+def offer_versioning_setup(use_sg=False):
     """Set up version tracking after proxy is running (automatic, no prompt)"""
     print()
     print(f"{Colors.BOLD}Version Management Setup{Colors.ENDC}")
@@ -175,11 +175,14 @@ def offer_versioning_setup():
 
     print_info("Installing version management...")
     try:
-        if run_command("make migrate-versions", check=False):
+        # Use sg docker if docker group not active in current session
+        migrate_cmd = "sg docker -c 'make migrate-versions'" if use_sg else "make migrate-versions"
+        if run_command(migrate_cmd, check=False):
             print_success("Version management configured!")
             # Restart proxy to apply versions.env
             print_info("Restarting proxy to apply version configuration...")
-            if run_command("make start", check=False):
+            restart_cmd = "sg docker -c 'make start'" if use_sg else "make start"
+            if run_command(restart_cmd, check=False):
                 print_success("Proxy restarted with version tracking enabled")
             else:
                 print_warning("Could not restart proxy automatically")
@@ -1065,7 +1068,7 @@ def main():
             time.sleep(15)
 
             # Offer version management setup (default yes, pins current image versions)
-            offer_versioning_setup()
+            offer_versioning_setup(use_sg)
 
         # Show final instructions (even if proxy didn't start, so user knows what to do)
         print_final_instructions(proxy_name, use_sg, proxy_started)
