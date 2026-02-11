@@ -314,6 +314,21 @@ disable-autorestart:
 	@sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || ./run-docker.sh docker compose down 2>/dev/null || true
 	@sudo systemctl disable $(SERVICE_NAME) 2>/dev/null || true
 	@sudo rm -f $(SERVICE_FILE)
+	@# Also clean up any stale dkproxy service files and dangling symlinks
+	@for f in /etc/systemd/system/dkproxy-*.service; do \
+		if [ -f "$$f" ]; then \
+			echo "Removing stale service file: $$(basename $$f)"; \
+			sudo systemctl stop "$$(basename $$f)" 2>/dev/null || true; \
+			sudo systemctl disable "$$(basename $$f)" 2>/dev/null || true; \
+			sudo rm -f "$$f"; \
+		fi; \
+	done
+	@for f in /etc/systemd/system/multi-user.target.wants/dkproxy-*.service; do \
+		if [ -L "$$f" ] && [ ! -e "$$f" ]; then \
+			echo "Removing dangling symlink: $$(basename $$f)"; \
+			sudo rm -f "$$f"; \
+		fi; \
+	done
 	@sudo systemctl daemon-reload
 	@echo "Auto-restart disabled and containers stopped."
 	@echo "Use 'make start' to start containers again."

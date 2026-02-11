@@ -76,6 +76,47 @@ print_info "Installation directory: $INSTALL_DIR"
 print_info "Service name: $SERVICE_NAME"
 echo ""
 
+# Clean up any stale dkproxy service files from previous installs
+print_info "Checking for stale service files..."
+FOUND_STALE=false
+for f in /etc/systemd/system/dkproxy-*.service; do
+    [ -f "$f" ] || continue
+    STALE_SERVICE=$(basename "$f")
+    if [ "$f" != "$SERVICE_FILE" ]; then
+        print_warning "Found stale service file: $STALE_SERVICE"
+        systemctl stop "$STALE_SERVICE" 2>/dev/null || true
+        systemctl disable "$STALE_SERVICE" 2>/dev/null || true
+        rm -f "$f"
+        print_success "Removed stale service: $STALE_SERVICE"
+        FOUND_STALE=true
+    else
+        print_info "Found existing service: $STALE_SERVICE (will be replaced)"
+        systemctl stop "$STALE_SERVICE" 2>/dev/null || true
+        systemctl disable "$STALE_SERVICE" 2>/dev/null || true
+        rm -f "$f"
+        FOUND_STALE=true
+    fi
+done
+
+# Also clean up stale symlinks in multi-user.target.wants
+for f in /etc/systemd/system/multi-user.target.wants/dkproxy-*.service; do
+    [ -L "$f" ] || continue
+    # Remove if dangling symlink or pointing to a file we just deleted
+    if [ ! -e "$f" ]; then
+        print_warning "Removing dangling symlink: $(basename "$f")"
+        rm -f "$f"
+        FOUND_STALE=true
+    fi
+done
+
+if [ "$FOUND_STALE" = true ]; then
+    systemctl daemon-reload
+    print_success "Stale services cleaned up"
+else
+    print_success "No stale service files found"
+fi
+echo ""
+
 # Check prerequisites
 print_info "Checking prerequisites..."
 
