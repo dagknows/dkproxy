@@ -434,12 +434,22 @@ class VersionManager:
     def get_previous_tag(self, service: str) -> Optional[str]:
         """Get previous tag for a service from history"""
         history = self.manifest.get('history', {}).get(service, [])
+        current_tag = self.get_current_tag(service)
+
+        # First pass: look for entry explicitly marked 'previous'
+        # that differs from what's currently deployed
         for entry in history:
-            if entry.get('status') == 'previous':
+            if entry.get('status') == 'previous' and entry.get('tag') != current_tag:
                 return entry.get('tag')
-        # If no 'previous' status, try second entry
-        if len(history) > 1:
-            return history[1].get('tag')
+
+        # Second pass: find the first non-current, non-rolled-back entry
+        # with a different tag. Handles post-rollback state where no 'previous' exists.
+        for entry in history:
+            tag = entry.get('tag')
+            status = entry.get('status', '')
+            if status not in ('current', 'rolled-back') and tag != current_tag:
+                return tag
+
         return None
 
     # ==================
@@ -1006,7 +1016,10 @@ class VersionManager:
             if entry.get('status') == 'current':
                 entry['status'] = 'rolled-back' if is_rollback else 'previous'
             elif entry.get('status') == 'previous':
-                entry['status'] = 'archived'
+                if not is_rollback:
+                    entry['status'] = 'archived'
+                # During rollback, leave 'previous' entries as-is so they
+                # remain available for subsequent rollbacks
 
         # Add new entry
         self.manifest['history'][service].insert(0, {
