@@ -18,5 +18,5 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 make prepare
 
 python3 -m venv ~/dkenv
-~/dkenv/bin/pip install setuptools
-~/dkenv/bin/pip install dagknows typing_extensions --force-reinstall
+~/dkenv/bin/pip install 'setuptools<81'
+~/dkenv/bin/pip install dagknows typing_extensions 'setuptools<81' --force-reinstall
