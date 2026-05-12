@@ -19,4 +19,4 @@ make prepare
 
 python3 -m venv ~/dkenv
 ~/dkenv/bin/pip install setuptools
-~/dkenv/bin/pip install dagknows --force-reinstall
+~/dkenv/bin/pip install dagknows typing_extensions --force-reinstall
