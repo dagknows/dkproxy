@@ -20,4 +20,4 @@ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 make prepare
 
-pip install dagknows --force-reinstall
+pip install dagknows typing_extensions --force-reinstall

@@ -408,7 +408,7 @@ def setup_virtual_environment():
         print_info("Installing dagknows CLI (this may take a moment)...")
     
     # Install or reinstall dagknows CLI
-    if run_command("~/dkenv/bin/pip install dagknows --force-reinstall", check=False):
+    if run_command("~/dkenv/bin/pip install dagknows typing_extensions --force-reinstall", check=False):
         print_success("dagknows CLI installed successfully")
         
         # Verify installation - must activate venv first
@@ -426,7 +426,7 @@ def setup_virtual_environment():
         return True
     else:
         print_error("Failed to install dagknows CLI")
-        print_error("You can try manually: ~/dkenv/bin/pip install dagknows --force-reinstall")
+        print_error("You can try manually: ~/dkenv/bin/pip install dagknows typing_extensions --force-reinstall")
         return False
 
 def validate_url(url):

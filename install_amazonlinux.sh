@@ -18,4 +18,4 @@ chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 
 make prepare
 
-pip install dagknows --force-reinstall
+pip install dagknows typing_extensions --force-reinstall
