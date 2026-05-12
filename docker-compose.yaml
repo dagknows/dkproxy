@@ -19,7 +19,7 @@ services:
 
   vault:
     restart: unless-stopped
-    image: ${DK_VAULT_IMAGE:-hashicorp/vault}:${DK_VAULT_TAG:-latest}
+    image: ${DK_VAULT_IMAGE:-hashicorp/vault}:${DK_VAULT_TAG:-1.20.3}
     networks:
       - saaslocalnetwork
     cap_add:
