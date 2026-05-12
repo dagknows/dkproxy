@@ -56,6 +56,13 @@ SERVICE_TO_COMPOSE = {
 DEFAULT_REGISTRY = 'public.ecr.aws/n5k3t9x2'
 HISTORY_LIMIT = 5
 
+# hashicorp/vault:latest now ships with USER vault in the Dockerfile; the
+# entrypoint can't chown the bind-mounted /vault/config nor setcap on
+# /bin/vault when it's not root. 1.20.3 is the last known-good tag
+# (verified on dev). Outpost/cmd_exec are unaffected — they keep their
+# ECR-driven :latest → semver resolution.
+VAULT_DEFAULT_TAG = '1.20.3'
+
 # Global flag to track if we need sg docker wrapper
 USE_SG_DOCKER = False
 
@@ -1060,6 +1067,11 @@ class VersionManager:
                 image = f"{registry}/{name}"
             elif name == 'vault':
                 image = "hashicorp/vault"
+                # vault can't be resolved via ECR; if the manifest still says
+                # 'latest', emit the pinned default so compose doesn't get a
+                # broken image. ECR services keep their resolved semver.
+                if tag == 'latest':
+                    tag = VAULT_DEFAULT_TAG
             else:
                 image = f"{registry}/{name}"
 

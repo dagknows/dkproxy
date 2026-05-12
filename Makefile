@@ -185,7 +185,7 @@ pull:
 	else \
 		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/outpost:latest; \
 		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/cmd_exec:latest; \
-		python3 docker-pull-retry.py hashicorp/vault:latest; \
+		python3 docker-pull-retry.py hashicorp/vault:1.20.3; \
 	fi
 
 # Pull latest images (updates manifest if versioning is enabled)
@@ -195,7 +195,7 @@ pull-latest:
 	else \
 		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/outpost:latest; \
 		python3 docker-pull-retry.py public.ecr.aws/n5k3t9x2/cmd_exec:latest; \
-		python3 docker-pull-retry.py hashicorp/vault:latest; \
+		python3 docker-pull-retry.py hashicorp/vault:1.20.3; \
 	fi
 
 status:
